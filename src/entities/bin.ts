@@ -1,8 +1,8 @@
-import { BigInt, BigDecimal, Address } from "@graphprotocol/graph-ts";
+import { BigInt, BigDecimal, Address, log } from "@graphprotocol/graph-ts";
 import { Bin, LBPair } from "../../generated/schema";
 import { BIG_DECIMAL_ONE, BIG_DECIMAL_ZERO, BIG_INT_ZERO } from "../constants";
 import { loadToken } from "../entities";
-import { getPriceYOfBin } from "../utils";
+import { decodeBinStep, getPriceYOfBin } from "../utils";
 
 export function loadBin(lbPair: LBPair, binId: number): Bin {
   const id = lbPair.id.concat("#").concat(binId.toString());

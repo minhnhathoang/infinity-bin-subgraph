@@ -58,4 +58,11 @@ export function decodeAmounts(amounts: Bytes): Array<BigInt> {
   return [amountsX, amountsY];
 }
 
+export function decodeBinStep(parameters: Bytes): BigInt {
+  // [16 - 31[: binSteps (16 bits)
+  const binStepsBytes = parameters.slice(28, 30);
+  binStepsBytes.reverse();
+  return BigInt.fromByteArray(Bytes.fromUint8Array(binStepsBytes));
+}
+
 export * from "./pricing";

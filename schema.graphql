@@ -1,16 +1,13 @@
-type Bundle @entity {
+type Bundle @entity(immutable: false) {
   id: ID!
 
-  # price of AVAX usd
-  avaxPriceUSD: BigDecimal!
+  # price of Native usd
+  nativePriceUSD: BigDecimal!
 }
 
-type LBFactory @entity {
+type PoolManager @entity(immutable: false) {
   # Contract address
   id: ID!
-
-  # Fee recipient
-  feeRecipient: Bytes!
 
   # Pair count
   pairCount: BigInt!
@@ -18,8 +15,8 @@ type LBFactory @entity {
   # Volume USD
   volumeUSD: BigDecimal!
 
-  # Volume AVAX
-  volumeAVAX: BigDecimal!
+  # Volume Native
+  volumeNative: BigDecimal!
 
   # Untracked volume
   untrackedVolumeUSD: BigDecimal!
@@ -27,8 +24,8 @@ type LBFactory @entity {
   # tvl USD
   totalValueLockedUSD: BigDecimal!
 
-  # tvl AVAX
-  totalValueLockedAVAX: BigDecimal!
+  # tvl Native
+  totalValueLockedNative: BigDecimal!
 
   # Transaction count
   txCount: BigInt!
@@ -39,14 +36,11 @@ type LBFactory @entity {
   # User count
   userCount: BigInt!
 
-  # flashloan fee
-  flashloanFee: BigInt!
-
   # pairs not used in trade routing
   ignoredLbPairs: [LBPair!]!
 
   feesUSD: BigDecimal!
-  feesAVAX: BigDecimal!
+  feesNative: BigDecimal!
 
   # Pairs
   lbPairs: [LBPair!]! @derivedFrom(field: "factory")
@@ -61,7 +55,7 @@ type LBFactory @entity {
   dayData: [TraderJoeDayData!]! @derivedFrom(field: "factory")
 }
 
-type TraderJoeHourData @entity {
+type TraderJoeHourData @entity(immutable: false) {
   # timestamp / 3600
   id: ID!
 
@@ -69,15 +63,15 @@ type TraderJoeHourData @entity {
   date: Int!
 
   # factory
-  factory: LBFactory!
+  factory: PoolManager!
 
   # volume
-  volumeAVAX: BigDecimal!
+  volumeNative: BigDecimal!
   volumeUSD: BigDecimal!
   untrackedVolumeUSD: BigDecimal!
 
   # TVL
-  totalValueLockedAVAX: BigDecimal!
+  totalValueLockedNative: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
   feesUSD: BigDecimal!
@@ -86,7 +80,7 @@ type TraderJoeHourData @entity {
   txCount: BigInt!
 }
 
-type TraderJoeDayData @entity {
+type TraderJoeDayData @entity(immutable: false) {
   # timestamp / 86400
   id: ID!
 
@@ -94,15 +88,15 @@ type TraderJoeDayData @entity {
   date: Int!
 
   # factory
-  factory: LBFactory!
+  factory: PoolManager!
 
   # volume
-  volumeAVAX: BigDecimal!
+  volumeNative: BigDecimal!
   volumeUSD: BigDecimal!
   untrackedVolumeUSD: BigDecimal!
 
   # TVL
-  totalValueLockedAVAX: BigDecimal!
+  totalValueLockedNative: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
   feesUSD: BigDecimal!
@@ -111,12 +105,12 @@ type TraderJoeDayData @entity {
   txCount: BigInt!
 }
 
-type Token @entity {
+type Token @entity(immutable: false) {
   # token address
   id: ID!
 
   # factory
-  factory: LBFactory!
+  factory: PoolManager!
 
   # mirrored from the smart contract
   symbol: String!
@@ -138,7 +132,7 @@ type Token @entity {
   totalValueLocked: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
-  derivedAVAX: BigDecimal!
+  derivedNative: BigDecimal!
 
   feesUSD: BigDecimal!
 
@@ -167,7 +161,7 @@ type Token @entity {
   quotePairsDayData: [LBPairDayData!]! @derivedFrom(field: "tokenY")
 }
 
-type TokenHourData @entity {
+type TokenHourData @entity(immutable: false) {
   # timestamp / 3600
   id: ID!
 
@@ -179,7 +173,7 @@ type TokenHourData @entity {
 
   # volume
   volume: BigDecimal!
-  volumeAVAX: BigDecimal!
+  volumeNative: BigDecimal!
   volumeUSD: BigDecimal!
 
   # tx count
@@ -187,7 +181,7 @@ type TokenHourData @entity {
 
   # TVL
   totalValueLocked: BigDecimal!
-  totalValueLockedAVAX: BigDecimal!
+  totalValueLockedNative: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
   # price usd
@@ -205,7 +199,7 @@ type TokenHourData @entity {
   close: BigDecimal!
 }
 
-type TokenDayData @entity {
+type TokenDayData @entity(immutable: false) {
   # timestamp / 86400
   id: ID!
 
@@ -217,7 +211,7 @@ type TokenDayData @entity {
 
   # volume
   volume: BigDecimal!
-  volumeAVAX: BigDecimal!
+  volumeNative: BigDecimal!
   volumeUSD: BigDecimal!
 
   # tx count
@@ -225,7 +219,7 @@ type TokenDayData @entity {
 
   # TVL
   totalValueLocked: BigDecimal!
-  totalValueLockedAVAX: BigDecimal!
+  totalValueLockedNative: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
   # price usd
@@ -243,7 +237,7 @@ type TokenDayData @entity {
   close: BigDecimal!
 }
 
-type SJoeDayData @entity {
+type SJoeDayData @entity(immutable: true) {
   # Timestmap / 86400
   id: ID!
 
@@ -253,16 +247,16 @@ type SJoeDayData @entity {
   amountX: BigDecimal!
   amountY: BigDecimal!
 
-  collectedAVAX: BigDecimal!
+  collectedNative: BigDecimal!
   collectedUSD: BigDecimal!
 }
 
-type LBPair @entity {
+type LBPair @entity(immutable: false) {
   # Contract address
   id: ID!
 
   # Factory
-  factory: LBFactory!
+  factory: PoolManager!
 
   # Name
   name: String!
@@ -273,14 +267,22 @@ type LBPair @entity {
   # mirrored from the smart contract
   tokenX: Token!
   tokenY: Token!
-  binStep: BigInt!
+  parameters: Bytes!
   activeId: Int!
+
+  # hooks registration bitmap
+  hooksRegistration: Bytes!
+  # bin step
+  binStep: BigInt!
+
+  # hooks address
+  hooks: String!
 
   reserveX: BigDecimal!
   reserveY: BigDecimal!
 
   # tvl
-  totalValueLockedAVAX: BigDecimal!
+  totalValueLockedNative: BigDecimal!
   totalValueLockedUSD: BigDecimal!
 
   # Price in terms of the asset pair
@@ -313,8 +315,6 @@ type LBPair @entity {
   mints: [Mint!]! @derivedFrom(field: "lbPair")
   burns: [Burn!]! @derivedFrom(field: "lbPair")
   swaps: [Swap!]! @derivedFrom(field: "lbPair")
-  flashed: [Flash!]! @derivedFrom(field: "lbPair")
-  collects: [Collect!]! @derivedFrom(field: "lbPair")
   transfers: [Transfer!]! @derivedFrom(field: "lbPair")
 
   # Created at
@@ -322,22 +322,7 @@ type LBPair @entity {
   block: BigInt!
 }
 
-type LBPairParameterSet @entity {
-  # LBPair address
-  id: ID!
-  sender: Bytes!
-  lbPair: LBPair!
-  baseFactor: Int!
-  filterPeriod: Int!
-  decayPeriod: Int!
-  reductionFactor: Int!
-  variableFeeControl: Int!
-  protocolShare: Int!
-  protocolSharePct: Int!
-  maxVolatilityAccumulator: Int!
-}
-
-type Bin @entity {
+type Bin @entity(immutable: false) {
   id: ID! # lbPair address + # + binId
   lbPair: LBPair!
 
@@ -354,7 +339,7 @@ type Bin @entity {
   liquidityProviderCount: BigInt!
 }
 
-type User @entity {
+type User @entity(immutable: true) {
   # Address
   id: ID!
 
@@ -363,12 +348,9 @@ type User @entity {
 
   # Liquidity Positions
   liquidityPositions: [LiquidityPosition!]! @derivedFrom(field: "user")
-
-  # fees collected by user for providing liquidity
-  collects: [Collect!]! @derivedFrom(field: "recipient")
 }
 
-type LBPairDayData @entity {
+type LBPairDayData @entity(immutable: false) {
   # timestamp / 86400
   id: ID!
 
@@ -403,7 +385,7 @@ type LBPairDayData @entity {
   feesUSD: BigDecimal!
 }
 
-type LBPairHourData @entity {
+type LBPairHourData @entity(immutable: false) {
   # timestamp / 3600
   id: ID!
 
@@ -438,7 +420,7 @@ type LBPairHourData @entity {
   feesUSD: BigDecimal!
 }
 
-type LiquidityPosition @entity {
+type LiquidityPosition @entity(immutable: false) {
   # lbPair address + user address
   id: ID!
   user: User!
@@ -454,7 +436,7 @@ type LiquidityPosition @entity {
   timestamp: Int!
 }
 
-type UserBinLiquidity @entity {
+type UserBinLiquidity @entity(immutable: false) {
   # lbPair address + user + binId
   id: ID!
 
@@ -473,7 +455,7 @@ type UserBinLiquidity @entity {
   timestamp: Int!
 }
 
-type Transaction @entity {
+type Transaction @entity(immutable: true) {
   # transaction hash
   id: ID!
 
@@ -484,12 +466,10 @@ type Transaction @entity {
   mints: [Mint!]! @derivedFrom(field: "transaction")
   burns: [Burn!]! @derivedFrom(field: "transaction")
   swaps: [Swap!]! @derivedFrom(field: "transaction")
-  flashed: [Flash!]! @derivedFrom(field: "transaction")
-  collects: [Collect!]! @derivedFrom(field: "transaction")
   transfers: [Transfer!]! @derivedFrom(field: "transaction")
 }
 
-type Mint @entity {
+type Mint @entity(immutable: true) {
   # transaction hash + "#" + index in mints Transaction array
   id: ID!
   transaction: Transaction!
@@ -513,7 +493,7 @@ type Mint @entity {
   logIndex: BigInt!
 }
 
-type Burn @entity {
+type Burn @entity(immutable: true) {
   # transaction hash + "#" + index in burns Transaction array
   id: ID!
   transaction: Transaction!
@@ -537,7 +517,7 @@ type Burn @entity {
   logIndex: BigInt!
 }
 
-type Swap @entity {
+type Swap @entity(immutable: true) {
   # transaction hash + "#" + index in swaps Transaction array
   id: ID!
   transaction: Transaction!
@@ -564,52 +544,8 @@ type Swap @entity {
   logIndex: BigInt!
 }
 
-type Flash @entity {
-  # transaction hash + "#" + index in Flash Transaction array
-  id: ID!
-  transaction: Transaction!
-  timestamp: Int! # need this to pull recent txns for specific token or pair
-  # pair
-  lbPair: LBPair!
-
-  # populated from the FlashLoan event
-  sender: Bytes!
-  origin: Bytes!
-  recipient: Bytes!
-
-  amountX: BigDecimal!
-  amountY: BigDecimal!
-  amountUSD: BigDecimal!
-
-  feesX: BigDecimal!
-  feesY: BigDecimal!
-  feesUSD: BigDecimal!
-
-  logIndex: BigInt!
-}
-
-type Collect @entity {
-  # transaction hash + "#" + index in collect Transaction array
-  id: ID!
-  transaction: Transaction!
-  timestamp: Int!
-
-  lbPair: LBPair!
-
-  amountX: BigDecimal!
-  amountY: BigDecimal!
-
-  recipient: User!
-  origin: Bytes!
-
-  collectedAVAX: BigDecimal!
-  collectedUSD: BigDecimal!
-
-  logIndex: BigInt!
-}
-
 # indexes both TransferSingle and TransferBatch events
-type Transfer @entity {
+type Transfer @entity(immutable: true) {
   # transaction hash + "#" + index in transfer Transaction array + "#" + (optional: TransferBatch index)
   id: ID!
   transaction: Transaction!

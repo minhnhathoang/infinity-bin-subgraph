@@ -1,23 +1,22 @@
-import { BigDecimal, BigInt, Address, log } from "@graphprotocol/graph-ts";
+import { BigDecimal, BigInt, Address } from "@graphprotocol/graph-ts";
 import {
   BIG_DECIMAL_ONE,
   BIG_DECIMAL_ZERO,
   BIG_DECIMAL_1E18,
-  WAVAX_ADDRESS,
+  WNATIVE_ADDRESS,
   JOE_DEX_LENS_ADDRESS,
   JOE_DEX_LENS_USD_DECIMALS,
 } from "../constants";
 import { Token, LBPair } from "../../generated/schema";
-import { DexLens } from "../../generated/LBPair/DexLens";
+import { DexLens } from "../../generated/PoolManager/DexLens";
 import { loadBundle, loadToken } from "../entities";
 
-export function getAvaxPriceInUSD(): BigDecimal {
+export function getNativePriceInUSD(): BigDecimal {
   const dexLens = DexLens.bind(JOE_DEX_LENS_ADDRESS);
 
-  const priceUsdResult = dexLens.try_getTokenPriceUSD(WAVAX_ADDRESS);
+  const priceUsdResult = dexLens.try_getTokenPriceUSD(WNATIVE_ADDRESS);
 
   if (priceUsdResult.reverted) {
-    log.warning("[getAvaxPriceInUSD] dexLens.getTokenPriceUSD() reverted", []);
     return BIG_DECIMAL_ZERO;
   }
 
@@ -28,51 +27,47 @@ export function getAvaxPriceInUSD(): BigDecimal {
   return priceUSD;
 }
 
-export function getTokenPriceInAVAX(token: Token): BigDecimal {
+export function getTokenPriceInNative(token: Token): BigDecimal {
   const dexLens = DexLens.bind(JOE_DEX_LENS_ADDRESS);
 
   const tokenAddress = Address.fromString(token.id);
 
-  const priceInAvaxResult = dexLens.try_getTokenPriceNative(tokenAddress);
+  const priceInNativeResult = dexLens.try_getTokenPriceNative(tokenAddress);
 
-  if (priceInAvaxResult.reverted) {
-    log.warning(
-      "[getTokenPriceInAVAX] dexLens.getTokenPriceNative() reverted for token {}",
-      [token.id]
-    );
+  if (priceInNativeResult.reverted) {
     return BIG_DECIMAL_ZERO;
   }
 
-  const priceInAvax = priceInAvaxResult.value
+  const priceInNative = priceInNativeResult.value
     .toBigDecimal()
     .div(BIG_DECIMAL_1E18);
 
-  return priceInAvax;
+  return priceInNative;
 }
 
 /**
- * Updates avaxPriceUSD pricing
+ * Updates nativePriceUSD pricing
  */
-export function updateAvaxInUsdPricing(): void {
+export function updateNativeInUsdPricing(): void {
   const bundle = loadBundle();
-  bundle.avaxPriceUSD = getAvaxPriceInUSD();
+  bundle.nativePriceUSD = getNativePriceInUSD();
   bundle.save();
 }
 
 /**
- * Updates and tokenX/tokenY derivedAVAX pricing
+ * Updates and tokenX/tokenY derivedNative pricing
  * @param {LBPair} lbPair
  */
-export function updateTokensDerivedAvax(lbPair: LBPair): void {
+export function updateTokensDerivedNative(lbPair: LBPair): void {
   const tokenX = loadToken(Address.fromString(lbPair.tokenX));
   const tokenY = loadToken(Address.fromString(lbPair.tokenY));
 
-  tokenX.derivedAVAX = getTokenPriceInAVAX(tokenX);
-  tokenY.derivedAVAX = getTokenPriceInAVAX(tokenY);
+  tokenX.derivedNative = getTokenPriceInNative(tokenX);
+  tokenY.derivedNative = getTokenPriceInNative(tokenY);
 
   const bundle = loadBundle();
-  const tokenXPriceUSD = tokenX.derivedAVAX.times(bundle.avaxPriceUSD);
-  const tokenYPriceUSD = tokenY.derivedAVAX.times(bundle.avaxPriceUSD);
+  const tokenXPriceUSD = tokenX.derivedNative.times(bundle.nativePriceUSD);
+  const tokenYPriceUSD = tokenY.derivedNative.times(bundle.nativePriceUSD);
   lbPair.tokenXPriceUSD = tokenXPriceUSD;
   lbPair.tokenYPriceUSD = tokenYPriceUSD;
 
@@ -98,8 +93,8 @@ export function getTrackedLiquidityUSD(
   tokenY: Token
 ): BigDecimal {
   const bundle = loadBundle();
-  const priceXUSD = tokenX.derivedAVAX.times(bundle.avaxPriceUSD);
-  const priceYUSD = tokenY.derivedAVAX.times(bundle.avaxPriceUSD);
+  const priceXUSD = tokenX.derivedNative.times(bundle.nativePriceUSD);
+  const priceYUSD = tokenY.derivedNative.times(bundle.nativePriceUSD);
 
   return tokenXAmount.times(priceXUSD).plus(tokenYAmount.times(priceYUSD));
 }
@@ -121,8 +116,8 @@ export function getTrackedVolumeUSD(
   tokenY: Token
 ): BigDecimal {
   const bundle = loadBundle();
-  const priceXUSD = tokenX.derivedAVAX.times(bundle.avaxPriceUSD);
-  const priceYUSD = tokenY.derivedAVAX.times(bundle.avaxPriceUSD);
+  const priceXUSD = tokenX.derivedNative.times(bundle.nativePriceUSD);
+  const priceYUSD = tokenY.derivedNative.times(bundle.nativePriceUSD);
 
   return tokenXAmount
     .times(priceXUSD)

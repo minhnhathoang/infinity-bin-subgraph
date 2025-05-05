@@ -10,7 +10,7 @@ import {
   LBPair,
   SJoeDayData,
 } from "../../generated/schema";
-import { loadLBFactory } from "./lbFactory";
+import { loadPoolManager } from "./poolManager";
 import { loadBundle } from "./bundle";
 import { BIG_DECIMAL_ZERO, BIG_INT_ZERO, BIG_INT_ONE } from "../constants";
 import { safeDiv } from "../utils";
@@ -23,17 +23,17 @@ export function loadTraderJoeHourData(
   const hourId = timestamp.div(SECONDS_IN_HOUR);
   const hourStartTimestamp = hourId.times(SECONDS_IN_HOUR);
 
-  const lbFactory = loadLBFactory();
+  const poolManager = loadPoolManager();
   let traderJoeHourData = TraderJoeHourData.load(hourId.toString());
   if (!traderJoeHourData) {
     traderJoeHourData = new TraderJoeHourData(hourId.toString());
     traderJoeHourData.date = hourStartTimestamp.toI32();
-    traderJoeHourData.factory = lbFactory.id;
+    traderJoeHourData.factory = poolManager.id;
 
-    traderJoeHourData.volumeAVAX = BIG_DECIMAL_ZERO;
+    traderJoeHourData.volumeNative = BIG_DECIMAL_ZERO;
     traderJoeHourData.volumeUSD = BIG_DECIMAL_ZERO;
     traderJoeHourData.untrackedVolumeUSD = BIG_DECIMAL_ZERO;
-    traderJoeHourData.totalValueLockedAVAX = BIG_DECIMAL_ZERO;
+    traderJoeHourData.totalValueLockedNative = BIG_DECIMAL_ZERO;
     traderJoeHourData.totalValueLockedUSD = BIG_DECIMAL_ZERO;
     traderJoeHourData.feesUSD = BIG_DECIMAL_ZERO;
     traderJoeHourData.txCount = BIG_INT_ZERO;
@@ -41,8 +41,8 @@ export function loadTraderJoeHourData(
   }
 
   if (update) {
-    traderJoeHourData.totalValueLockedAVAX = lbFactory.totalValueLockedAVAX;
-    traderJoeHourData.totalValueLockedUSD = lbFactory.totalValueLockedUSD;
+    traderJoeHourData.totalValueLockedNative = poolManager.totalValueLockedNative;
+    traderJoeHourData.totalValueLockedUSD = poolManager.totalValueLockedUSD;
     traderJoeHourData.txCount = traderJoeHourData.txCount.plus(BIG_INT_ONE);
     traderJoeHourData.save();
   }
@@ -58,17 +58,17 @@ export function loadTraderJoeDayData(
   const dayId = timestamp.div(SECONDS_IN_DAY);
   const dayStartTimestamp = dayId.times(SECONDS_IN_DAY);
 
-  const lbFactory = loadLBFactory();
+  const poolManager = loadPoolManager();
   let traderJoeDayData = TraderJoeDayData.load(dayId.toString());
   if (!traderJoeDayData) {
     traderJoeDayData = new TraderJoeDayData(dayId.toString());
     traderJoeDayData.date = dayStartTimestamp.toI32();
-    traderJoeDayData.factory = lbFactory.id;
+    traderJoeDayData.factory = poolManager.id;
 
-    traderJoeDayData.volumeAVAX = BIG_DECIMAL_ZERO;
+    traderJoeDayData.volumeNative = BIG_DECIMAL_ZERO;
     traderJoeDayData.volumeUSD = BIG_DECIMAL_ZERO;
     traderJoeDayData.untrackedVolumeUSD = BIG_DECIMAL_ZERO;
-    traderJoeDayData.totalValueLockedAVAX = BIG_DECIMAL_ZERO;
+    traderJoeDayData.totalValueLockedNative = BIG_DECIMAL_ZERO;
     traderJoeDayData.totalValueLockedUSD = BIG_DECIMAL_ZERO;
     traderJoeDayData.feesUSD = BIG_DECIMAL_ZERO;
     traderJoeDayData.txCount = BIG_INT_ZERO;
@@ -76,8 +76,8 @@ export function loadTraderJoeDayData(
   }
 
   if (update) {
-    traderJoeDayData.totalValueLockedAVAX = lbFactory.totalValueLockedAVAX;
-    traderJoeDayData.totalValueLockedUSD = lbFactory.totalValueLockedUSD;
+    traderJoeDayData.totalValueLockedNative = poolManager.totalValueLockedNative;
+    traderJoeDayData.totalValueLockedUSD = poolManager.totalValueLockedUSD;
     traderJoeDayData.txCount = traderJoeDayData.txCount.plus(BIG_INT_ONE);
     traderJoeDayData.save();
   }
@@ -97,7 +97,7 @@ export function loadTokenHourData(
   const id = token.id.concat("-").concat(hourStartTimestamp.toString());
 
   const bundle = loadBundle();
-  const tokenPrice = token.derivedAVAX.times(bundle.avaxPriceUSD);
+  const tokenPrice = token.derivedNative.times(bundle.nativePriceUSD);
 
   let tokenHourData = TokenHourData.load(id);
   if (!tokenHourData) {
@@ -106,11 +106,11 @@ export function loadTokenHourData(
     tokenHourData.token = token.id;
 
     tokenHourData.volume = BIG_DECIMAL_ZERO;
-    tokenHourData.volumeAVAX = BIG_DECIMAL_ZERO;
+    tokenHourData.volumeNative = BIG_DECIMAL_ZERO;
     tokenHourData.volumeUSD = BIG_DECIMAL_ZERO;
     tokenHourData.txCount = BIG_INT_ZERO;
     tokenHourData.totalValueLocked = BIG_DECIMAL_ZERO;
-    tokenHourData.totalValueLockedAVAX = BIG_DECIMAL_ZERO;
+    tokenHourData.totalValueLockedNative = BIG_DECIMAL_ZERO;
     tokenHourData.totalValueLockedUSD = BIG_DECIMAL_ZERO;
     tokenHourData.priceUSD = BIG_DECIMAL_ZERO;
     tokenHourData.feesUSD = BIG_DECIMAL_ZERO;
@@ -124,9 +124,9 @@ export function loadTokenHourData(
   if (update) {
     tokenHourData.txCount = tokenHourData.txCount.plus(BIG_INT_ONE);
     tokenHourData.totalValueLocked = token.totalValueLocked;
-    tokenHourData.totalValueLockedAVAX = safeDiv(
+    tokenHourData.totalValueLockedNative = safeDiv(
       token.totalValueLockedUSD,
-      bundle.avaxPriceUSD
+      bundle.nativePriceUSD
     );
     tokenHourData.totalValueLockedUSD = token.totalValueLockedUSD;
     tokenHourData.priceUSD = tokenPrice;
@@ -156,7 +156,7 @@ export function loadTokenDayData(
   const id = token.id.concat("-").concat(dayStartTimestamp.toString());
 
   const bundle = loadBundle();
-  const tokenPrice = token.derivedAVAX.times(bundle.avaxPriceUSD);
+  const tokenPrice = token.derivedNative.times(bundle.nativePriceUSD);
 
   let tokenDayData = TokenDayData.load(id);
   if (!tokenDayData) {
@@ -165,11 +165,11 @@ export function loadTokenDayData(
     tokenDayData.token = token.id;
 
     tokenDayData.volume = BIG_DECIMAL_ZERO;
-    tokenDayData.volumeAVAX = BIG_DECIMAL_ZERO;
+    tokenDayData.volumeNative = BIG_DECIMAL_ZERO;
     tokenDayData.volumeUSD = BIG_DECIMAL_ZERO;
     tokenDayData.txCount = BIG_INT_ZERO;
     tokenDayData.totalValueLocked = BIG_DECIMAL_ZERO;
-    tokenDayData.totalValueLockedAVAX = BIG_DECIMAL_ZERO;
+    tokenDayData.totalValueLockedNative = BIG_DECIMAL_ZERO;
     tokenDayData.totalValueLockedUSD = BIG_DECIMAL_ZERO;
     tokenDayData.priceUSD = BIG_DECIMAL_ZERO;
     tokenDayData.feesUSD = BIG_DECIMAL_ZERO;
@@ -183,9 +183,9 @@ export function loadTokenDayData(
   if (update) {
     tokenDayData.txCount = tokenDayData.txCount.plus(BIG_INT_ONE);
     tokenDayData.totalValueLocked = token.totalValueLocked;
-    tokenDayData.totalValueLockedAVAX = safeDiv(
+    tokenDayData.totalValueLockedNative = safeDiv(
       token.totalValueLockedUSD,
-      bundle.avaxPriceUSD
+      bundle.nativePriceUSD
     );
     tokenDayData.totalValueLockedUSD = token.totalValueLockedUSD;
     tokenDayData.priceUSD = tokenPrice;
@@ -296,7 +296,7 @@ export function loadSJoeDayData(timestamp: BigInt): SJoeDayData {
     sJoeDayData.date = dayStartTimestamp.toI32();
     sJoeDayData.amountX = BIG_DECIMAL_ZERO;
     sJoeDayData.amountY = BIG_DECIMAL_ZERO;
-    sJoeDayData.collectedAVAX = BIG_DECIMAL_ZERO;
+    sJoeDayData.collectedNative = BIG_DECIMAL_ZERO;
     sJoeDayData.collectedUSD = BIG_DECIMAL_ZERO;
 
     sJoeDayData.save();

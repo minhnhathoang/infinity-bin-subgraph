@@ -1,17 +1,11 @@
-# Joe-v2 Subgraph
+# Infinity Bin Subgraph
 
-Subgraph for Joe-v2 (Liquidity Book) on AVAX C-chain.
+Subgraph for PancakeSwap Infinity Bin Pools on different chains.
 
 ### Subgraph Status
 
 | network    | subgraph |
-| ---------- | :------: | 
-| avalanche  | https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2 |  
-| arbitrum   | https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2-arbitrum |  
-| fuji       | https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2-fuji |  
-| arb-goerli | https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2-arb-goerli |  
-
-
+| ---------- | :------: |
 
 ### Setup & Deploy
 
@@ -38,6 +32,6 @@ $ yarn deploy:{network}
 3. Build subgraph: `yarn codegen && yarn build`
 4. Create local subgraph: `yarn create-local`
 5. Deploy to local node: `yarn deploy-local`
-6. Subgraph endpoint available at http://localhost:8000/subgraphs/name/traderjoe-xyz/joe-v2-fuji
+6. Subgraph endpoint available at http://localhost:8000/subgraphs/name/pancakeswap-infinity-bin-bsc
 7. To open indexer logs: `docker logs joe_indexer -f 2>&1 | grep --line-buffered -i -E --color "WORD_TO_FILTER"`
 8. To stop the running containers: `docker rm -f postgres ipfs joe_indexer`

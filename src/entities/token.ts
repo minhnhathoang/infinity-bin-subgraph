@@ -1,26 +1,29 @@
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 import { Token } from "../../generated/schema";
-import { loadLBFactory } from "./lbFactory";
+import { loadPoolManager } from "./poolManager";
 import {
+  ADDRESS_ZERO,
   BIG_INT_ONE,
   BIG_INT_ZERO,
   BIG_DECIMAL_ZERO,
+  NATIVE_NAME,
+  NATIVE_SYMBOL,
   NULL_CALL_RESULT_VALUE,
 } from "../constants";
-import { ERC20 as ERC20ABI } from "../../generated/LBFactory/ERC20";
-import { ERC20SymbolBytes as ERC20SymbolBytesABI } from "../../generated/LBFactory/ERC20SymbolBytes";
-import { ERC20NameBytes as ERC20NameBytesABI } from "../../generated/LBFactory/ERC20NameBytes";
+import { ERC20 as ERC20ABI } from "../../generated/PoolManager/ERC20";
+import { ERC20SymbolBytes as ERC20SymbolBytesABI } from "../../generated/PoolManager/ERC20SymbolBytes";
+import { ERC20NameBytes as ERC20NameBytesABI } from "../../generated/PoolManager/ERC20NameBytes";
 
 export function loadToken(address: Address): Token {
   let token = Token.load(address.toHexString());
 
   if (!token) {
-    const lbFactory = loadLBFactory();
-    lbFactory.tokenCount = lbFactory.tokenCount.plus(BIG_INT_ONE);
-    lbFactory.save();
+    const poolManager = loadPoolManager();
+    poolManager.tokenCount = poolManager.tokenCount.plus(BIG_INT_ONE);
+    poolManager.save();
 
     token = new Token(address.toHexString());
-    token.factory = lbFactory.id;
+    token.factory = poolManager.id;
     token.symbol = getSymbol(address);
     token.name = getName(address);
     token.decimals = getDecimals(address);
@@ -32,7 +35,7 @@ export function loadToken(address: Address): Token {
     token.txCount = BIG_INT_ZERO;
     token.totalValueLocked = BIG_DECIMAL_ZERO;
     token.totalValueLockedUSD = BIG_DECIMAL_ZERO;
-    token.derivedAVAX = BIG_DECIMAL_ZERO;
+    token.derivedNative = BIG_DECIMAL_ZERO;
     token.feesUSD = BIG_DECIMAL_ZERO;
 
     token.save();
@@ -42,6 +45,10 @@ export function loadToken(address: Address): Token {
 }
 
 export function getSymbol(address: Address): string {
+  if (address.equals(ADDRESS_ZERO)) {
+    return NATIVE_SYMBOL;
+  }
+
   const contract = ERC20ABI.bind(address);
   const contractSymbolBytes = ERC20SymbolBytesABI.bind(address);
 
@@ -63,6 +70,10 @@ export function getSymbol(address: Address): string {
 }
 
 export function getName(address: Address): string {
+  if (address.equals(ADDRESS_ZERO)) {
+    return NATIVE_NAME;
+  }
+
   const contract = ERC20ABI.bind(address);
   const contractNameBytes = ERC20NameBytesABI.bind(address);
 
@@ -84,6 +95,10 @@ export function getName(address: Address): string {
 }
 
 export function getTotalSupply(address: Address): BigInt {
+  if (address.equals(ADDRESS_ZERO)) {
+    return BIG_INT_ZERO;
+  }
+
   const contract = ERC20ABI.bind(address);
 
   let totalSupplyValue = BIG_INT_ZERO;
@@ -96,6 +111,10 @@ export function getTotalSupply(address: Address): BigInt {
 }
 
 export function getDecimals(address: Address): BigInt {
+  if (address.equals(ADDRESS_ZERO)) {
+    return BigInt.fromI32(18);
+  }
+
   const contract = ERC20ABI.bind(address);
 
   let decimalsValue = BigInt.fromI32(18); // use 18 decimals as default

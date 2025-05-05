@@ -1,8 +1,10 @@
 {
     "network": "bsc",
-    "lbfactory_address": "0x43646A8e839B2f2766392C1BF8f60F6e587B6960",
+    "native_symbol": "BNB",
+    "native_name": "Binance Coin",
+    "wnative_address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "poolmanager_address": "0x3D311D6283Dd8aB90bb0031835C8e606349e2850",
     "joe_dex_lens_address": "0x0A5077D8dc51e27Ad536847b0CF558165BA9AD1b",
     "joe_dex_lens_usd_decimals": 18,
-    "wavax_address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-    "start_block": 26153438
+    "start_block": 47571312
 }

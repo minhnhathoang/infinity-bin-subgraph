@@ -1,4 +1,4 @@
-export * from "./lbFactory";
+export * from "./poolManager";
 export * from "./lbPair";
 export * from "./token";
 export * from "./bundle";

@@ -1,87 +1,50 @@
-import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
 import { LBPair } from "../../generated/schema";
 import {
   BIG_INT_ZERO,
   BIG_DECIMAL_ZERO,
   BIG_DECIMAL_HUNDRED,
+  BIG_DECIMAL_1E4,
   BIG_DECIMAL_1E10,
   BIG_DECIMAL_1E18,
-  LBFACTORY_ADDRESS,
+  POOLMANAGER_ADDRESS,
 } from "../constants";
 import { loadToken } from "./token";
 import { trackBin } from "./bin";
-import { LBPair as LBPairABI } from "../../generated/LBFactory/LBPair";
+import { Initialize__Params } from "../../generated/PoolManager/PoolManager";
+import { decodeBinStep } from "../utils";
 
-export function loadLbPair(id: Address): LBPair | null {
-  const lbPair = LBPair.load(id.toHexString());
+export function loadLbPair(id: string): LBPair | null {
+  const lbPair = LBPair.load(id);
   return lbPair;
 }
 
-// should only be used when LBPairCreated event is detected
+// should only be used when Initialize event is detected
 export function createLBPair(
-  lbPairAddr: Address,
+  initialize: Initialize__Params,
   block: ethereum.Block
 ): LBPair | null {
-  const lbPairContract = LBPairABI.bind(lbPairAddr);
-  const tokenXCall = lbPairContract.try_getTokenX();
-  const tokenYCall = lbPairContract.try_getTokenY();
-  if (tokenXCall.reverted || tokenYCall.reverted) {
-    return null;
-  }
+  const tokenX = loadToken(initialize.currency0);
+  const tokenY = loadToken(initialize.currency1);
 
-  const lbPairReservesCall = lbPairContract.try_getReserves();
-  if (lbPairReservesCall.reverted) {
-    return null;
-  }
+  const lbPair = new LBPair(initialize.id.toHexString());
 
-  const lbPairActiveIdCall = lbPairContract.try_getActiveId();
-  if (lbPairActiveIdCall.reverted) {
-    return null;
-  }
-
-  const lbPairBinStepCall = lbPairContract.try_getBinStep();
-  if (lbPairBinStepCall.reverted) {
-    return null;
-  }
-
-  const lbPairStaticFeeParametersCall = lbPairContract.try_getStaticFeeParameters();
-  if (lbPairStaticFeeParametersCall.reverted) {
-    return null;
-  }
-
-  const binStep = BigInt.fromI32(lbPairBinStepCall.value);
-  const baseFactor = BigInt.fromI32(
-    lbPairStaticFeeParametersCall.value.getBaseFactor()
-  );
-
-  const activeId = lbPairActiveIdCall.value;
-
-  // base fee in 1e18 precision: baseFactor * binStep * 1e10
-  const baseFee = binStep // 4 decimals
-    .times(baseFactor) // 4 decimals
-    .toBigDecimal()
-    .times(BIG_DECIMAL_1E10);
-
-  const tokenX = loadToken(tokenXCall.value);
-  const tokenY = loadToken(tokenYCall.value);
-
-  const lbPair = new LBPair(lbPairAddr.toHexString());
-
-  lbPair.factory = LBFACTORY_ADDRESS.toHexString();
+  lbPair.factory = POOLMANAGER_ADDRESS.toHexString();
   lbPair.name = tokenX.symbol
     .concat("-")
-    .concat(tokenY.symbol)
-    .concat("-")
-    .concat(binStep.toString());
-  lbPair.tokenX = tokenXCall.value.toHexString();
-  lbPair.tokenY = tokenYCall.value.toHexString();
-  lbPair.binStep = binStep;
-  lbPair.activeId = activeId;
-  lbPair.baseFeePct = baseFee.div(BIG_DECIMAL_1E18).times(BIG_DECIMAL_HUNDRED);
+    .concat(tokenY.symbol);
+  lbPair.tokenX = tokenX.id;
+  lbPair.tokenY = tokenY.id;
+  lbPair.hooks = initialize.hooks.toHexString();
+  lbPair.parameters = initialize.parameters;
+  lbPair.hooksRegistration = Bytes.fromUint8Array(initialize.parameters.slice(30, 32));
+  lbPair.binStep = decodeBinStep(initialize.parameters);
+  lbPair.activeId = initialize.activeId;
+  lbPair.baseFeePct = BigInt.fromI32(initialize.fee).toBigDecimal().div(BIG_DECIMAL_1E4);
 
   lbPair.reserveX = BIG_DECIMAL_ZERO;
   lbPair.reserveY = BIG_DECIMAL_ZERO;
-  lbPair.totalValueLockedAVAX = BIG_DECIMAL_ZERO;
+  lbPair.totalValueLockedNative = BIG_DECIMAL_ZERO;
   lbPair.totalValueLockedUSD = BIG_DECIMAL_ZERO;
   lbPair.tokenXPrice = BIG_DECIMAL_ZERO;
   lbPair.tokenYPrice = BIG_DECIMAL_ZERO;
@@ -103,7 +66,7 @@ export function createLBPair(
   // generate Bin
   trackBin(
     lbPair,
-    activeId,
+    initialize.activeId,
     BIG_DECIMAL_ZERO,
     BIG_DECIMAL_ZERO,
     BIG_DECIMAL_ZERO,

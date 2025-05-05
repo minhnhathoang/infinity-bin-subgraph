@@ -1,12 +1,12 @@
 import { Bundle } from "../../generated/schema";
-import { getAvaxPriceInUSD } from "../utils";
+import { getNativePriceInUSD } from "../utils";
 
 export function loadBundle(): Bundle {
   let bundle = Bundle.load("1");
 
   if (bundle === null) {
     bundle = new Bundle("1");
-    bundle.avaxPriceUSD = getAvaxPriceInUSD();
+    bundle.nativePriceUSD = getNativePriceInUSD();
     bundle.save();
   }
 

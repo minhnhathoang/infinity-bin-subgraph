@@ -1,0 +1,82 @@
+specVersion: 0.0.4
+description: PancakSwap Infinity Bin subgraph
+repository: https://github.com/NgoKimPhu/infinity-bin-subgraph
+schema:
+  file: ./schema.graphql
+features:
+  - grafting
+dataSources:
+  - kind: ethereum/contract
+    name: PoolManager
+    network: bsc
+    source:
+      abi: PoolManager
+      address: "0xC697d2898e0D09264376196696c51D7aBbbAA4a9"
+      startBlock: 47571312
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/poolManager.ts
+      entities:
+        - PoolManager
+        - LBPair
+        - Token
+        - Bundle
+        - Bin
+        - HourData
+        - DayData
+        - LBPairHourData
+        - LBPairDayData
+        - TokenHourData
+        - TokenDayData
+        - User
+        - LiquidityPosition
+        - UserBinLiquidity
+        - Transaction
+        - Mint
+        - Burn
+        - Swap
+      abis:
+        - name: PoolManager
+          file: ./abis/PoolManager.json
+        - name: DexLens
+          file: ./abis/DexLens.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: Initialize(indexed bytes32,indexed address,indexed
+            address,address,uint24,bytes32,uint24)
+          handler: handleInitialize
+        - event: Swap(indexed bytes32,indexed address,int128,int128,uint24,uint24,uint16)
+          handler: handleSwap
+        - event: Mint(indexed bytes32,indexed
+            address,uint256[],bytes32,bytes32[],bytes32,bytes32)
+          handler: handleMint
+        - event: Burn(indexed bytes32,indexed address,uint256[],bytes32,bytes32[])
+          handler: handleBurn
+  - kind: ethereum/contract
+    name: PositionManager
+    network: bsc
+    source:
+      abi: PositionManager
+      address: "0x3D311D6283Dd8aB90bb0031835C8e606349e2850"
+      startBlock: 47571312
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/positionManager.ts
+      entities:
+        - LiquidityPosition
+      abis:
+        - name: PositionManager
+          file: ./abis/PositionManager.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed
+            address,uint256[],uint256[])
+          handler: handleTransferBatch
