@@ -329,6 +329,7 @@ type Bin @entity(immutable: false) {
   priceX: BigDecimal!
   priceY: BigDecimal!
 
+  liquidity: BigInt!
   totalSupply: BigInt!
   reserveX: BigDecimal!
   reserveY: BigDecimal!
@@ -477,13 +478,18 @@ type Mint @entity(immutable: true) {
   # pair
   lbPair: LBPair!
 
-  # populated from the primary Transfer event
-  lbTokenAmount: BigInt!
-
   # populated from the Mint event
   sender: Bytes!
   recipient: Bytes!
   origin: Bytes!
+  idsCount: Int!
+  minId: Int!
+  maxId: Int!
+  salt: Bytes!
+  compositionFeeAmountX: BigDecimal!
+  compositionFeeAmountY: BigDecimal!
+  feeAmountToProtocolX: BigDecimal!
+  feeAmountToProtocolY: BigDecimal!
 
   amountX: BigDecimal!
   amountY: BigDecimal!
@@ -501,13 +507,14 @@ type Burn @entity(immutable: true) {
   # pair
   lbPair: LBPair!
 
-  # populated from the primary Transfer event
-  lbTokenAmount: BigInt!
-
   # populated from the Mint event
   sender: Bytes!
   recipient: Bytes!
   origin: Bytes!
+  idsCount: Int!
+  minId: Int!
+  maxId: Int!
+  salt: Bytes!
 
   amountX: BigDecimal!
   amountY: BigDecimal!

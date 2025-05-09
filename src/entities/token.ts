@@ -1,127 +1,121 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
-import { Token } from "../../generated/schema";
-import { loadPoolManager } from "./poolManager";
+import {Address, BigInt} from '@graphprotocol/graph-ts'
+import {ERC20 as ERC20ABI} from '../../generated/PoolManager/ERC20'
+import {ERC20NameBytes as ERC20NameBytesABI} from '../../generated/PoolManager/ERC20NameBytes'
+import {ERC20SymbolBytes as ERC20SymbolBytesABI} from '../../generated/PoolManager/ERC20SymbolBytes'
+import {Token} from '../../generated/schema'
 import {
-  ADDRESS_ZERO,
-  BIG_INT_ONE,
-  BIG_INT_ZERO,
-  BIG_DECIMAL_ZERO,
-  NATIVE_NAME,
-  NATIVE_SYMBOL,
-  NULL_CALL_RESULT_VALUE,
-} from "../constants";
-import { ERC20 as ERC20ABI } from "../../generated/PoolManager/ERC20";
-import { ERC20SymbolBytes as ERC20SymbolBytesABI } from "../../generated/PoolManager/ERC20SymbolBytes";
-import { ERC20NameBytes as ERC20NameBytesABI } from "../../generated/PoolManager/ERC20NameBytes";
+  ADDRESS_ZERO, BIG_DECIMAL_ZERO, BIG_INT_ONE, BIG_INT_ZERO, NATIVE_NAME, NATIVE_SYMBOL, NULL_CALL_RESULT_VALUE,
+} from '../constants'
+import {loadPoolManager} from './poolManager'
 
 export function loadToken(address: Address): Token {
-  let token = Token.load(address.toHexString());
+  let token = Token.load(address.toHexString())
 
   if (!token) {
-    const poolManager = loadPoolManager();
-    poolManager.tokenCount = poolManager.tokenCount.plus(BIG_INT_ONE);
-    poolManager.save();
+    const poolManager = loadPoolManager()
+    poolManager.tokenCount = poolManager.tokenCount.plus(BIG_INT_ONE)
+    poolManager.save()
 
-    token = new Token(address.toHexString());
-    token.factory = poolManager.id;
-    token.symbol = getSymbol(address);
-    token.name = getName(address);
-    token.decimals = getDecimals(address);
-    token.totalSupply = getTotalSupply(address);
+    token = new Token(address.toHexString())
+    token.factory = poolManager.id
+    token.symbol = getSymbol(address)
+    token.name = getName(address)
+    token.decimals = getDecimals(address)
+    token.totalSupply = getTotalSupply(address)
 
-    token.volume = BIG_DECIMAL_ZERO;
-    token.volumeUSD = BIG_DECIMAL_ZERO;
-    token.untrackedVolumeUSD = BIG_DECIMAL_ZERO;
-    token.txCount = BIG_INT_ZERO;
-    token.totalValueLocked = BIG_DECIMAL_ZERO;
-    token.totalValueLockedUSD = BIG_DECIMAL_ZERO;
-    token.derivedNative = BIG_DECIMAL_ZERO;
-    token.feesUSD = BIG_DECIMAL_ZERO;
+    token.volume = BIG_DECIMAL_ZERO
+    token.volumeUSD = BIG_DECIMAL_ZERO
+    token.untrackedVolumeUSD = BIG_DECIMAL_ZERO
+    token.txCount = BIG_INT_ZERO
+    token.totalValueLocked = BIG_DECIMAL_ZERO
+    token.totalValueLockedUSD = BIG_DECIMAL_ZERO
+    token.derivedNative = BIG_DECIMAL_ZERO
+    token.feesUSD = BIG_DECIMAL_ZERO
 
-    token.save();
+    token.save()
   }
 
-  return token as Token;
+  return token as Token
 }
 
 export function getSymbol(address: Address): string {
   if (address.equals(ADDRESS_ZERO)) {
-    return NATIVE_SYMBOL;
+    return NATIVE_SYMBOL
   }
 
-  const contract = ERC20ABI.bind(address);
-  const contractSymbolBytes = ERC20SymbolBytesABI.bind(address);
+  const contract = ERC20ABI.bind(address)
+  const contractSymbolBytes = ERC20SymbolBytesABI.bind(address)
 
-  let tokenSymbol = "unknown";
-  const symbolResultCall = contract.try_symbol();
+  let tokenSymbol = 'unknown'
+  const symbolResultCall = contract.try_symbol()
   if (symbolResultCall.reverted) {
-    const symbolResultBytesCall = contractSymbolBytes.try_symbol();
+    const symbolResultBytesCall = contractSymbolBytes.try_symbol()
     if (!symbolResultBytesCall.reverted) {
       // for broken tokens that have no symbol function exposed
       if (symbolResultBytesCall.value.toHex() != NULL_CALL_RESULT_VALUE) {
-        tokenSymbol = symbolResultBytesCall.value.toString();
+        tokenSymbol = symbolResultBytesCall.value.toString()
       }
     }
   } else {
-    tokenSymbol = symbolResultCall.value;
+    tokenSymbol = symbolResultCall.value
   }
 
-  return tokenSymbol;
+  return tokenSymbol
 }
 
 export function getName(address: Address): string {
   if (address.equals(ADDRESS_ZERO)) {
-    return NATIVE_NAME;
+    return NATIVE_NAME
   }
 
-  const contract = ERC20ABI.bind(address);
-  const contractNameBytes = ERC20NameBytesABI.bind(address);
+  const contract = ERC20ABI.bind(address)
+  const contractNameBytes = ERC20NameBytesABI.bind(address)
 
-  let tokenName = "unknown";
-  const tokenNameCall = contract.try_name();
+  let tokenName = 'unknown'
+  const tokenNameCall = contract.try_name()
   if (tokenNameCall.reverted) {
-    const nameResultBytesCall = contractNameBytes.try_name();
+    const nameResultBytesCall = contractNameBytes.try_name()
     if (!nameResultBytesCall.reverted) {
       // for broken tokens that have no name function exposed
       if (nameResultBytesCall.value.toHex() !== NULL_CALL_RESULT_VALUE) {
-        tokenName = nameResultBytesCall.value.toString();
+        tokenName = nameResultBytesCall.value.toString()
       }
     }
   } else {
-    tokenName = tokenNameCall.value;
+    tokenName = tokenNameCall.value
   }
 
-  return tokenName;
+  return tokenName
 }
 
 export function getTotalSupply(address: Address): BigInt {
   if (address.equals(ADDRESS_ZERO)) {
-    return BIG_INT_ZERO;
+    return BIG_INT_ZERO
   }
 
-  const contract = ERC20ABI.bind(address);
+  const contract = ERC20ABI.bind(address)
 
-  let totalSupplyValue = BIG_INT_ZERO;
-  const totalSupplyCall = contract.try_totalSupply();
+  let totalSupplyValue = BIG_INT_ZERO
+  const totalSupplyCall = contract.try_totalSupply()
   if (!totalSupplyCall.reverted) {
-    totalSupplyValue = totalSupplyCall.value;
+    totalSupplyValue = totalSupplyCall.value
   }
 
-  return totalSupplyValue;
+  return totalSupplyValue
 }
 
 export function getDecimals(address: Address): BigInt {
   if (address.equals(ADDRESS_ZERO)) {
-    return BigInt.fromI32(18);
+    return BigInt.fromI32(18)
   }
 
-  const contract = ERC20ABI.bind(address);
+  const contract = ERC20ABI.bind(address)
 
-  let decimalsValue = BigInt.fromI32(18); // use 18 decimals as default
-  const decimalsValueCall = contract.try_decimals();
+  let decimalsValue = BigInt.fromI32(18) // use 18 decimals as default
+  const decimalsValueCall = contract.try_decimals()
   if (!decimalsValueCall.reverted) {
-    decimalsValue = BigInt.fromI32(decimalsValueCall.value);
+    decimalsValue = BigInt.fromI32(decimalsValueCall.value)
   }
 
-  return decimalsValue;
+  return decimalsValue
 }
