@@ -1,22 +1,20 @@
 import {Address, BigDecimal, BigInt, log} from '@graphprotocol/graph-ts'
 import {Burn as BurnEvent, Initialize, Mint as MintEvent, Swap as SwapEvent} from '../generated/PoolManager/PoolManager'
-import {Burn, LBPair, Mint, Swap, Token} from '../generated/schema'
-import {BIG_DECIMAL_ZERO, BIG_INT_1E4, BIG_INT_ONE, BIG_INT_ZERO} from './constants'
+import {Burn, LBPair, Mint, Swap} from '../generated/schema'
+import {BIG_DECIMAL_ZERO, BIG_INT_ONE, BIG_INT_ZERO} from './constants'
 import {
-  createLBPair, loadBin, loadBundle, loadLbPair, loadLBPairDayData, loadLBPairHourData, loadPoolManager, loadToken,
-  loadTokenDayData, loadTokenHourData, loadTraderJoeDayData, loadTraderJoeHourData, loadTransaction, loadUser,
+  createLBPair, loadBin, loadLbPair, loadPoolManager, loadToken, loadTransaction,
   trackBins,
 } from './entities'
 import {
-  decodeAmounts, formatTokenAmountByDecimals, getTrackedLiquidityUSD, getTrackedVolumeUSD, safeDiv,
-  updateNativeInUsdPricing, updateTokensDerivedNative,
+  decodeAmounts, formatTokenAmountByDecimals,
 } from './utils'
 
 export function handleInitialize(event: Initialize): void {
-  loadBundle()
   const lbPair = createLBPair(event.params, event.block)
 
   if (!lbPair) {
+    log.warning('[handleInitialize] can not create LBPair, tx: {}', [event.transaction.hash.toHexString()])
     return
   }
 
@@ -33,21 +31,11 @@ export function handleSwap(event: SwapEvent): void {
     return
   }
 
-  // update pricing
-  updateNativeInUsdPricing()
-  updateTokensDerivedNative(lbPair)
-
-  // price bundle
-  const bundle = loadBundle()
-
   // reset tvl aggregates until new amounts calculated
   const poolManager = loadPoolManager()
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.minus(lbPair.totalValueLockedNative)
 
   const tokenX = loadToken(Address.fromString(lbPair.tokenX))
   const tokenY = loadToken(Address.fromString(lbPair.tokenY))
-  const tokenXPriceUSD = tokenX.derivedNative.times(bundle.nativePriceUSD)
-  const tokenYPriceUSD = tokenY.derivedNative.times(bundle.nativePriceUSD)
 
   let amountXIn: BigInt
   let amountYIn: BigInt
@@ -70,18 +58,6 @@ export function handleSwap(event: SwapEvent): void {
   const fmtAmountXOut = formatTokenAmountByDecimals(amountXOut, tokenX.decimals)
   const fmtAmountYOut = formatTokenAmountByDecimals(amountYOut, tokenY.decimals)
 
-  const fee = BigInt.fromI32(event.params.fee)
-  const totalFeesX = formatTokenAmountByDecimals(amountXIn.times(fee).div(BIG_INT_1E4), tokenX.decimals)
-  const totalFeesY = formatTokenAmountByDecimals(amountYIn.times(fee).div(BIG_INT_1E4), tokenY.decimals)
-  const feesUSD = totalFeesX
-    .times(tokenX.derivedNative.times(bundle.nativePriceUSD))
-    .plus(totalFeesY.times(tokenY.derivedNative.times(bundle.nativePriceUSD)))
-
-  const amountXTotal = fmtAmountXIn.plus(fmtAmountXOut)
-  const amountYTotal = fmtAmountYIn.plus(fmtAmountYOut)
-
-  const trackedVolumeUSD = getTrackedVolumeUSD(amountXTotal, tokenX as Token, amountYTotal, tokenY as Token)
-  const trackedVolumeNative = safeDiv(trackedVolumeUSD, bundle.nativePriceUSD)
 
   // Bin
   trackBins(lbPair as LBPair, lbPair.activeId, event.params.activeId, tokenX.decimals, tokenY.decimals)
@@ -100,118 +76,22 @@ export function handleSwap(event: SwapEvent): void {
     log.warning('[handleSwap] reserveY < 0 {}, fmtAmountYIn {}, fmtAmountYOut {}',
       [lbPair.reserveY.toString(), fmtAmountYIn.toString(), fmtAmountYOut.toString()])
   }
-  lbPair.totalValueLockedUSD =
-    getTrackedLiquidityUSD(lbPair.reserveX, tokenX as Token, lbPair.reserveY, tokenY as Token)
-  lbPair.totalValueLockedNative = safeDiv(lbPair.totalValueLockedUSD, bundle.nativePriceUSD)
   lbPair.tokenXPrice = bin.priceX
   lbPair.tokenYPrice = bin.priceY
-  lbPair.volumeTokenX = lbPair.volumeTokenX.plus(amountXTotal)
-  lbPair.volumeTokenY = lbPair.volumeTokenY.plus(amountYTotal)
-  lbPair.volumeUSD = lbPair.volumeUSD.plus(trackedVolumeUSD)
-  lbPair.feesTokenX = lbPair.feesTokenX.plus(totalFeesX)
-  lbPair.feesTokenY = lbPair.feesTokenY.plus(totalFeesY)
-  lbPair.feesUSD = lbPair.feesUSD.plus(feesUSD)
   lbPair.save()
-
-  // LBPairHourData
-  const lbPairHourData = loadLBPairHourData(event.block.timestamp, lbPair as LBPair, true)
-  lbPairHourData.volumeTokenX = lbPairHourData.volumeTokenX.plus(amountXTotal)
-  lbPairHourData.volumeTokenY = lbPairHourData.volumeTokenY.plus(amountYTotal)
-  lbPairHourData.volumeUSD = lbPairHourData.volumeUSD.plus(trackedVolumeUSD)
-  lbPairHourData.feesUSD = lbPairHourData.feesUSD.plus(feesUSD)
-  lbPairHourData.save()
-
-  // LBPairDayData
-  const lbPairDayData = loadLBPairDayData(event.block.timestamp, lbPair as LBPair, true)
-  lbPairDayData.volumeTokenX = lbPairDayData.volumeTokenX.plus(amountXTotal)
-  lbPairDayData.volumeTokenY = lbPairDayData.volumeTokenY.plus(amountYTotal)
-  lbPairDayData.volumeUSD = lbPairDayData.volumeUSD.plus(trackedVolumeUSD)
-  lbPairDayData.feesUSD = lbPairDayData.feesUSD.plus(feesUSD)
-  lbPairDayData.save()
 
   // PoolManager
   poolManager.txCount = poolManager.txCount.plus(BIG_INT_ONE)
-  poolManager.volumeUSD = poolManager.volumeUSD.plus(trackedVolumeUSD)
-  poolManager.volumeNative = poolManager.volumeNative.plus(trackedVolumeNative)
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.plus(lbPair.totalValueLockedNative)
-  poolManager.totalValueLockedUSD = poolManager.totalValueLockedNative.times(bundle.nativePriceUSD)
-  poolManager.feesUSD = poolManager.feesUSD.plus(feesUSD)
-  poolManager.feesNative = safeDiv(poolManager.feesUSD, bundle.nativePriceUSD)
   poolManager.save()
-
-  // TraderJoeHourData
-  const traderJoeHourData = loadTraderJoeHourData(event.block.timestamp, true)
-  traderJoeHourData.volumeNative = traderJoeHourData.volumeNative.plus(trackedVolumeNative)
-  traderJoeHourData.volumeUSD = traderJoeHourData.volumeUSD.plus(trackedVolumeUSD)
-  traderJoeHourData.feesUSD = traderJoeHourData.feesUSD.plus(feesUSD)
-  traderJoeHourData.save()
-
-  // TraderJoeDayData
-  const traderJoeDayData = loadTraderJoeDayData(event.block.timestamp, true)
-  traderJoeDayData.volumeNative = traderJoeDayData.volumeNative.plus(trackedVolumeNative)
-  traderJoeDayData.volumeUSD = traderJoeDayData.volumeUSD.plus(trackedVolumeUSD)
-  traderJoeDayData.feesUSD = traderJoeDayData.feesUSD.plus(feesUSD)
-  traderJoeDayData.save()
 
   // TokenX
   tokenX.txCount = tokenX.txCount.plus(BIG_INT_ONE)
-  tokenX.volume = tokenX.volume.plus(amountXTotal)
-  tokenX.volumeUSD = tokenX.volumeUSD.plus(trackedVolumeUSD)
-  tokenX.totalValueLocked = tokenX.totalValueLocked
-    .plus(fmtAmountXIn)
-    .minus(fmtAmountXOut)
-  tokenX.totalValueLockedUSD = tokenX.totalValueLockedUSD.plus(tokenX.totalValueLocked.times(tokenXPriceUSD))
-  const feesUsdX = totalFeesX.times(tokenX.derivedNative.times(bundle.nativePriceUSD))
-  tokenX.feesUSD = tokenX.feesUSD.plus(feesUsdX)
 
   // TokenY
   tokenY.txCount = tokenY.txCount.plus(BIG_INT_ONE)
-  tokenY.volume = tokenY.volume.plus(amountYTotal)
-  tokenY.volumeUSD = tokenY.volumeUSD.plus(trackedVolumeUSD)
-  tokenY.totalValueLocked = tokenY.totalValueLocked
-    .plus(fmtAmountYIn)
-    .minus(fmtAmountYOut)
-  tokenY.totalValueLockedUSD = tokenY.totalValueLockedUSD.plus(tokenY.totalValueLocked.times(tokenYPriceUSD))
-  const feesUsdY = totalFeesY.times(tokenY.derivedNative.times(bundle.nativePriceUSD))
-  tokenY.feesUSD = tokenY.feesUSD.plus(feesUsdY)
 
   tokenX.save()
   tokenY.save()
-
-  // TokenXHourData
-  const tokenXHourData = loadTokenHourData(event.block.timestamp, tokenX as Token, true)
-  tokenXHourData.volume = tokenXHourData.volume.plus(amountXTotal)
-  tokenXHourData.volumeNative = tokenXHourData.volumeNative.plus(trackedVolumeNative)
-  tokenXHourData.volumeUSD = tokenXHourData.volumeUSD.plus(trackedVolumeUSD)
-  tokenXHourData.feesUSD = tokenXHourData.feesUSD.plus(feesUsdX)
-  tokenXHourData.save()
-
-  // TokenYHourData
-  const tokenYHourData = loadTokenHourData(event.block.timestamp, tokenY as Token, true)
-  tokenYHourData.volume = tokenYHourData.volume.plus(amountYTotal)
-  tokenYHourData.volumeNative = tokenYHourData.volumeNative.plus(trackedVolumeNative)
-  tokenYHourData.volumeUSD = tokenYHourData.volumeUSD.plus(trackedVolumeUSD)
-  tokenYHourData.feesUSD = tokenYHourData.feesUSD.plus(feesUsdY)
-  tokenYHourData.save()
-
-  // TokenXDayData
-  const tokenXDayData = loadTokenDayData(event.block.timestamp, tokenX as Token, true)
-  tokenXDayData.volume = tokenXDayData.volume.plus(amountXTotal)
-  tokenXDayData.volumeNative = tokenXDayData.volumeNative.plus(trackedVolumeNative)
-  tokenXDayData.volumeUSD = tokenXDayData.volumeUSD.plus(trackedVolumeUSD)
-  tokenXDayData.feesUSD = tokenXDayData.feesUSD.plus(feesUsdX)
-  tokenXDayData.save()
-
-  // TokenYDayData
-  const tokenYDayData = loadTokenDayData(event.block.timestamp, tokenY as Token, true)
-  tokenYDayData.volume = tokenYDayData.volume.plus(amountYTotal)
-  tokenYDayData.volumeNative = tokenYDayData.volumeNative.plus(trackedVolumeNative)
-  tokenYDayData.volumeUSD = tokenYDayData.volumeUSD.plus(trackedVolumeUSD)
-  tokenYDayData.feesUSD = tokenYDayData.feesUSD.plus(feesUsdY)
-  tokenYDayData.save()
-
-  // User
-  loadUser(event.params.sender)
 
   // Transaction
   const transaction = loadTransaction(event)
@@ -229,10 +109,6 @@ export function handleSwap(event: SwapEvent): void {
   swap.amountXOut = fmtAmountXOut
   swap.amountYIn = fmtAmountYIn
   swap.amountYOut = fmtAmountYOut
-  swap.amountUSD = trackedVolumeUSD
-  swap.feesTokenX = totalFeesX
-  swap.feesTokenY = totalFeesY
-  swap.feesUSD = feesUSD
   swap.logIndex = event.logIndex
   swap.save()
 }
@@ -245,13 +121,6 @@ export function handleMint(event: MintEvent): void {
     log.error('[handleMint] returning because LBPair not detected: {} ', [event.params.id.toHexString()])
     return
   }
-
-  // update pricing
-  updateNativeInUsdPricing()
-  updateTokensDerivedNative(lbPair)
-
-  // price bundle
-  const bundle = loadBundle()
 
   const tokenX = loadToken(Address.fromString(lbPair.tokenX))
   const tokenY = loadToken(Address.fromString(lbPair.tokenY))
@@ -279,60 +148,23 @@ export function handleMint(event: MintEvent): void {
   }
   trackBins(lbPair, minId, maxId, tokenX.decimals, tokenY.decimals)
 
-  const compositionFeeAmounts = decodeAmounts(event.params.compositionFeeAmount)
-  const feeAmountsToProtocol = decodeAmounts(event.params.feeAmountToProtocol)
-  const feeAmountToProtocolX = formatTokenAmountByDecimals(feeAmountsToProtocol[0], tokenX.decimals)
-  const feeAmountToProtocolY = formatTokenAmountByDecimals(feeAmountsToProtocol[1], tokenY.decimals)
-  const feesUSD = feeAmountToProtocolX
-    .times(tokenX.derivedNative.times(bundle.nativePriceUSD))
-    .plus(feeAmountToProtocolY.times(tokenY.derivedNative.times(bundle.nativePriceUSD)))
-
-  // reset tvl aggregates until new amounts calculated
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.minus(lbPair.totalValueLockedNative)
-
   // LBPair
   lbPair.txCount = lbPair.txCount.plus(BIG_INT_ONE)
   lbPair.reserveX = lbPair.reserveX.plus(totalAmountX)
   lbPair.reserveY = lbPair.reserveY.plus(totalAmountY)
-
-  lbPair.totalValueLockedNative = lbPair.reserveX
-    .times(tokenX.derivedNative)
-    .plus(lbPair.reserveY.times(tokenY.derivedNative))
-  lbPair.totalValueLockedUSD = lbPair.totalValueLockedNative.times(bundle.nativePriceUSD)
   lbPair.save()
 
   // PoolManager
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.plus(lbPair.totalValueLockedNative)
-  poolManager.totalValueLockedUSD = poolManager.totalValueLockedNative.times(bundle.nativePriceUSD)
-  poolManager.feesUSD = poolManager.feesUSD.plus(feesUSD)
-  poolManager.feesNative = safeDiv(poolManager.feesUSD, bundle.nativePriceUSD)
   poolManager.txCount = poolManager.txCount.plus(BIG_INT_ONE)
   poolManager.save()
 
-  loadLBPairHourData(event.block.timestamp, lbPair as LBPair, true)
-  loadLBPairDayData(event.block.timestamp, lbPair as LBPair, true)
-  loadTraderJoeHourData(event.block.timestamp, true)
-  loadTraderJoeDayData(event.block.timestamp, true)
-
   // TokenX
   tokenX.txCount = tokenX.txCount.plus(BIG_INT_ONE)
-  tokenX.totalValueLocked = tokenX.totalValueLocked.plus(totalAmountX)
-  tokenX.totalValueLockedUSD = tokenX.totalValueLocked.times(tokenX.derivedNative.times(bundle.nativePriceUSD))
   tokenX.save()
 
   // TokenY
   tokenY.txCount = tokenY.txCount.plus(BIG_INT_ONE)
-  tokenY.totalValueLocked = tokenY.totalValueLocked.plus(totalAmountY)
-  tokenY.totalValueLockedUSD = tokenY.totalValueLocked.times(tokenY.derivedNative.times(bundle.nativePriceUSD))
   tokenY.save()
-
-  loadTokenHourData(event.block.timestamp, tokenX as Token, true)
-  loadTokenHourData(event.block.timestamp, tokenY as Token, true)
-  loadTokenDayData(event.block.timestamp, tokenX as Token, true)
-  loadTokenDayData(event.block.timestamp, tokenY as Token, true)
-
-  // User
-  loadUser(event.params.sender)
 
   // Transaction
   const transaction = loadTransaction(event)
@@ -349,13 +181,8 @@ export function handleMint(event: MintEvent): void {
   mint.minId = minId
   mint.maxId = maxId
   mint.salt = event.params.salt
-  mint.compositionFeeAmountX = formatTokenAmountByDecimals(compositionFeeAmounts[0], tokenX.decimals)
-  mint.compositionFeeAmountY = formatTokenAmountByDecimals(compositionFeeAmounts[1], tokenY.decimals)
-  mint.feeAmountToProtocolX = feeAmountToProtocolX
-  mint.feeAmountToProtocolY = feeAmountToProtocolY
   mint.amountX = totalAmountX
   mint.amountY = totalAmountY
-  mint.amountUSD = getTrackedLiquidityUSD(totalAmountX, tokenX, totalAmountY, tokenY)
   mint.logIndex = event.logIndex
   mint.save()
 }
@@ -368,13 +195,6 @@ export function handleBurn(event: BurnEvent): void {
     log.warning('[handleBurn] LBPair not detected: {} ', [event.params.id.toHexString()])
     return
   }
-
-  // update pricing
-  updateNativeInUsdPricing()
-  updateTokensDerivedNative(lbPair)
-
-  // price bundle
-  const bundle = loadBundle()
 
   const tokenX = loadToken(Address.fromString(lbPair.tokenX))
   const tokenY = loadToken(Address.fromString(lbPair.tokenY))
@@ -401,9 +221,6 @@ export function handleBurn(event: BurnEvent): void {
   }
   trackBins(lbPair, minId, maxId, tokenX.decimals, tokenY.decimals)
 
-  // reset tvl aggregates until new amounts calculated
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.minus(lbPair.totalValueLockedNative)
-
   // LBPair
   lbPair.txCount = lbPair.txCount.plus(BIG_INT_ONE)
   lbPair.reserveX = lbPair.reserveX.minus(totalAmountX)
@@ -416,43 +233,19 @@ export function handleBurn(event: BurnEvent): void {
     log.warning('[handleBurn] LBPair reserveY < 0: {}, totalAmountY: {}',
       [lbPair.reserveY.toString(), totalAmountY.toString()])
   }
-
-  lbPair.totalValueLockedNative = lbPair.reserveX
-    .times(tokenX.derivedNative)
-    .plus(lbPair.reserveY.times(tokenY.derivedNative))
-  lbPair.totalValueLockedUSD = lbPair.totalValueLockedNative.times(bundle.nativePriceUSD)
   lbPair.save()
 
   // PoolManager
-  poolManager.totalValueLockedNative = poolManager.totalValueLockedNative.plus(lbPair.totalValueLockedNative)
-  poolManager.totalValueLockedUSD = poolManager.totalValueLockedNative.times(bundle.nativePriceUSD)
   poolManager.txCount = poolManager.txCount.plus(BIG_INT_ONE)
   poolManager.save()
 
-  loadLBPairHourData(event.block.timestamp, lbPair as LBPair, true)
-  loadLBPairDayData(event.block.timestamp, lbPair as LBPair, true)
-  loadTraderJoeHourData(event.block.timestamp, true)
-  loadTraderJoeDayData(event.block.timestamp, true)
-
   // TokenX
   tokenX.txCount = tokenX.txCount.plus(BIG_INT_ONE)
-  tokenX.totalValueLocked = tokenX.totalValueLocked.minus(totalAmountX)
-  tokenX.totalValueLockedUSD = tokenX.totalValueLocked.times(tokenX.derivedNative.times(bundle.nativePriceUSD))
   tokenX.save()
 
   // TokenY
   tokenY.txCount = tokenY.txCount.plus(BIG_INT_ONE)
-  tokenY.totalValueLocked = tokenY.totalValueLocked.minus(totalAmountY)
-  tokenY.totalValueLockedUSD = tokenY.totalValueLocked.times(tokenY.derivedNative.times(bundle.nativePriceUSD))
   tokenY.save()
-
-  loadTokenHourData(event.block.timestamp, tokenX as Token, true)
-  loadTokenHourData(event.block.timestamp, tokenY as Token, true)
-  loadTokenDayData(event.block.timestamp, tokenX as Token, true)
-  loadTokenDayData(event.block.timestamp, tokenY as Token, true)
-
-  // User
-  loadUser(event.params.sender)
 
   // Transaction
   const transaction = loadTransaction(event)
@@ -471,7 +264,6 @@ export function handleBurn(event: BurnEvent): void {
   burn.salt = event.params.salt
   burn.amountX = totalAmountX
   burn.amountY = totalAmountY
-  burn.amountUSD = getTrackedLiquidityUSD(totalAmountX, tokenX, totalAmountY, tokenY)
   burn.logIndex = event.logIndex
   burn.save()
 }
