@@ -33,5 +33,5 @@ $ yarn deploy:{network}
 4. Create local subgraph: `yarn create-local`
 5. Deploy to local node: `yarn deploy-local`
 6. Subgraph endpoint available at http://localhost:8000/subgraphs/name/pancakeswap-infinity-bin-bsc
-7. To open indexer logs: `docker logs joe_indexer -f 2>&1 | grep --line-buffered -i -E --color "WORD_TO_FILTER"`
-8. To stop the running containers: `docker rm -f postgres ipfs joe_indexer`
+7. To open indexer logs: `docker logs indexer -f 2>&1 | grep --line-buffered -i -E --color "WORD_TO_FILTER"`
+8. To stop the running containers: `docker rm -f postgres ipfs indexer`
