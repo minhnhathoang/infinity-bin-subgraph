@@ -21,7 +21,8 @@ export const WNATIVE_ADDRESS = Address.fromString('{{ wnative_address }}')
 export const NATIVE_SYMBOL = '{{ native_symbol }}'
 export const NATIVE_NAME = '{{ native_name }}'
 
-export const POOLMANAGER_ADDRESS = Address.fromString('{{ poolmanager_address }}')
+export const POOLMANAGER_ADDRESS = Address.fromString('{{ pool_manager_address }}')
+export const POSITION_MANAGER_ADDRESS = Address.fromString('{{ position_manager_address }}')
 export const MULTICALL3_ADDRESS = Address.fromString('{{ multicall3_address }}')
 export const JOE_DEX_LENS_ADDRESS = Address.fromString('{{ joe_dex_lens_address }}')
 export const JOE_DEX_LENS_USD_DECIMALS = BigDecimal.fromString('1e{{ joe_dex_lens_usd_decimals }}')

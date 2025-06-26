@@ -22,6 +22,7 @@ export const NATIVE_SYMBOL = 'BNB'
 export const NATIVE_NAME = 'Binance Coin'
 
 export const POOLMANAGER_ADDRESS = Address.fromString('0xC697d2898e0D09264376196696c51D7aBbbAA4a9')
+export const POSITION_MANAGER_ADDRESS = Address.fromString('0xC697d2898e0D09264376196696c51D7aBbbAA4a9')
 export const MULTICALL3_ADDRESS = Address.fromString('0xcA11bde05977b3631167028862bE2a173976CA11')
 export const JOE_DEX_LENS_ADDRESS = Address.fromString('0x0A5077D8dc51e27Ad536847b0CF558165BA9AD1b')
 export const JOE_DEX_LENS_USD_DECIMALS = BigDecimal.fromString('1e18')

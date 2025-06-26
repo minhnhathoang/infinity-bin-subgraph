@@ -2,12 +2,12 @@ import {Address, BigDecimal, BigInt, log} from '@graphprotocol/graph-ts'
 import {DexLens} from '../../generated/PoolManager/DexLens'
 import {LBPair, Token} from '../../generated/schema'
 import {
-  BIG_DECIMAL_1E18,
-  BIG_DECIMAL_ONE,
-  BIG_DECIMAL_ZERO,
-  JOE_DEX_LENS_ADDRESS,
-  JOE_DEX_LENS_USD_DECIMALS,
-  WNATIVE_ADDRESS,
+    BIG_DECIMAL_1E18,
+    BIG_DECIMAL_ONE,
+    BIG_DECIMAL_ZERO,
+    JOE_DEX_LENS_ADDRESS,
+    JOE_DEX_LENS_USD_DECIMALS,
+    WNATIVE_ADDRESS,
 } from '../constants'
 import {loadBundle, loadToken} from '../entities'
 
@@ -21,8 +21,8 @@ export function getNativePriceInUSD(): BigDecimal {
     }
 
     return priceUsdResult.value
-        .toBigDecimal()
-        .div(JOE_DEX_LENS_USD_DECIMALS)
+      .toBigDecimal()
+      .div(JOE_DEX_LENS_USD_DECIMALS)
 }
 
 export function getTokenPriceInNative(token: Token): BigDecimal {
@@ -37,8 +37,8 @@ export function getTokenPriceInNative(token: Token): BigDecimal {
     }
 
     return priceInNativeResult.value
-        .toBigDecimal()
-        .div(BIG_DECIMAL_1E18)
+      .toBigDecimal()
+      .div(BIG_DECIMAL_1E18)
 }
 
 /**
@@ -83,10 +83,10 @@ export function updateTokensDerivedNative(lbPair: LBPair): void {
  * @returns
  */
 export function getTrackedLiquidityUSD(
-    tokenXAmount: BigDecimal,
-    tokenX: Token,
-    tokenYAmount: BigDecimal,
-    tokenY: Token,
+  tokenXAmount: BigDecimal,
+  tokenX: Token,
+  tokenYAmount: BigDecimal,
+  tokenY: Token,
 ): BigDecimal {
     const bundle = loadBundle()
     const priceXUSD = tokenX.derivedNative.times(bundle.nativePriceUSD)
@@ -106,19 +106,19 @@ export function getTrackedLiquidityUSD(
  * @returns
  */
 export function getTrackedVolumeUSD(
-    tokenXAmount: BigDecimal,
-    tokenX: Token,
-    tokenYAmount: BigDecimal,
-    tokenY: Token,
+  tokenXAmount: BigDecimal,
+  tokenX: Token,
+  tokenYAmount: BigDecimal,
+  tokenY: Token,
 ): BigDecimal {
     const bundle = loadBundle()
     const priceXUSD = tokenX.derivedNative.times(bundle.nativePriceUSD)
     const priceYUSD = tokenY.derivedNative.times(bundle.nativePriceUSD)
 
     return tokenXAmount
-        .times(priceXUSD)
-        .plus(tokenYAmount.times(priceYUSD))
-        .div(BigDecimal.fromString('2'))
+      .times(priceXUSD)
+      .plus(tokenYAmount.times(priceYUSD))
+      .div(BigDecimal.fromString('2'))
 }
 
 const BASIS_POINT_MAX = new BigDecimal(BigInt.fromI32(10_000))
@@ -148,20 +148,11 @@ function pow(base: BigDecimal, exp: i64): BigDecimal {
  * @param { Token } tokenY
  */
 export function getPriceYOfBin(
-    binId: number,
-    binStep: BigInt,
-    tokenX: Token,
-    tokenY: Token,
+  binId: number,
+  binStep: BigInt,
+  tokenX: Token,
+  tokenY: Token,
 ): BigDecimal {
-    log.info('[getPriceYOfBin] binId: {}, binStep: {}, tokenX: {}, tokenY: {}, decimalX: {}, decimalY: {}', [
-        binId.toString(),
-        binStep.toString(),
-        tokenX.id.toString(),
-        tokenY.id.toString(),
-        tokenX.decimals.toString(),
-        tokenY.decimals.toString(),
-    ])
-
     const BIN_STEP = new BigDecimal(binStep)
 
     // compute bpVal = (1 + binStep / 10_000)

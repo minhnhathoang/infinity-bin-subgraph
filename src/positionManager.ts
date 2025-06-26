@@ -1,9 +1,16 @@
 import {TransferBatch} from '../generated/PositionManager/PositionManager'
 import {LBPair, Transfer} from '../generated/schema'
-import {ADDRESS_ZERO, BIG_INT_ONE, MULTICALL3_ADDRESS, POOLMANAGER_ADDRESS} from './constants'
+import {ADDRESS_ZERO, BIG_INT_ONE, MULTICALL3_ADDRESS, POOLMANAGER_ADDRESS, POSITION_MANAGER_ADDRESS} from './constants'
 import {
-  addLiquidityPosition, loadLbPair, loadLBPairDayData, loadLBPairHourData, loadPoolManager, loadTraderJoeDayData,
-  loadTraderJoeHourData, loadTransaction, removeLiquidityPosition, trackBin,
+  addLiquidityPosition,
+  loadLbPair,
+  loadLBPairDayData,
+  loadLBPairHourData,
+  loadPoolManager,
+  loadTraderJoeDayData,
+  loadTraderJoeHourData,
+  loadTransaction,
+  removeLiquidityPosition,
 } from './entities'
 import {Address, Bytes, ethereum, log} from "@graphprotocol/graph-ts";
 
@@ -13,12 +20,12 @@ class Multicall3 extends ethereum.SmartContract {
   }
 
   try_aggregate(
-      calls: Array<ethereum.Tuple>,
+    calls: Array<ethereum.Tuple>,
   ): ethereum.CallResult<Array<ethereum.Value>> {
     return super.tryCall(
-        'aggregate',
-        'aggregate((address,bytes)[]):(uint256,bytes[])',
-        [ethereum.Value.fromTupleArray(calls)],
+      'aggregate',
+      'aggregate((address,bytes)[]):(uint256,bytes[])',
+      [ethereum.Value.fromTupleArray(calls)],
     )
   }
 }
@@ -49,9 +56,9 @@ export function handleTransferBatch(event: TransferBatch): void {
   const calls = new Array<ethereum.Tuple>(event.params.ids.length)
   for (let i = 0; i < calls.length; i++) {
     calls[i] = changetype<ethereum.Tuple>([
-      ethereum.Value.fromAddress(POOLMANAGER_ADDRESS),
+      ethereum.Value.fromAddress(POSITION_MANAGER_ADDRESS),
       ethereum.Value.fromBytes(
-          getPositionsSelector.concat(ethereum.encode(ethereum.Value.fromUnsignedBigInt(event.params.ids[i]))!),
+        getPositionsSelector.concat(ethereum.encode(ethereum.Value.fromUnsignedBigInt(event.params.ids[i]))!),
       ),
     ])
   }
@@ -65,39 +72,39 @@ export function handleTransferBatch(event: TransferBatch): void {
   const positionResults = multicallResult.value[1].toBytesArray()
 
   for (let i = 0; i < event.params.amounts.length; i++) {
-    removeLiquidityPosition(
-        event.address,
-        event.params.from,
-        event.params.ids[i],
-        event.params.amounts[i],
-        event.block,
-    )
-    addLiquidityPosition(
-        event.address,
-        event.params.to,
-        event.params.ids[i],
-        event.params.amounts[i],
-        event.block,
-    )
-
     let positionResult = positionResults[i]
     const decoded = ethereum.decode('(tuple(address,address,address,address,uint24,bytes32),uint24)', positionResult)
     if (decoded === null) {
       log.error("[handleTransferBatch] decoded is null for position: {}", [positionResult.toHexString()])
       continue
     }
+
     let binId = decoded.toTuple()[1].toBigInt()
-    log.debug("[handleTransferBatch] binId: {}", [binId.toString()])
+
+    removeLiquidityPosition(
+      event.address,
+      event.params.from,
+      binId,
+      event.params.amounts[i],
+      event.block,
+    )
+    addLiquidityPosition(
+      event.address,
+      event.params.to,
+      binId,
+      event.params.amounts[i],
+      event.block,
+    )
 
     const isMint = ADDRESS_ZERO.equals(event.params.from)
     const isBurn = ADDRESS_ZERO.equals(event.params.to)
 
     const transfer = new Transfer(
-        transaction.id
-            .concat('#')
-            .concat(lbPair.txCount.toString())
-            .concat('#')
-            .concat(i.toString()),
+      transaction.id
+        .concat('#')
+        .concat(lbPair.txCount.toString())
+        .concat('#')
+        .concat(i.toString()),
     )
     transfer.transaction = transaction.id
     transfer.timestamp = event.block.timestamp.toI32()

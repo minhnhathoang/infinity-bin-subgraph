@@ -28,7 +28,7 @@ $ yarn deploy:{network}
 
 ### Setting up local node (for development)
 1. Install docker on local machine https://docs.docker.com/get-docker/)
-2. Run `yarn start:node` 
+2. Run `yarn start:node`
 3. Build subgraph: `yarn codegen && yarn build`
 4. Create local subgraph: `yarn create-local`
 5. Deploy to local node: `yarn deploy-local`
