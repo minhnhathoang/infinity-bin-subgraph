@@ -1,4 +1,4 @@
-import {Address, BigDecimal, BigInt, Bytes, ethereum} from '@graphprotocol/graph-ts'
+import {Address, BigDecimal, BigInt, Bytes, ethereum, log} from '@graphprotocol/graph-ts'
 import {Bin, LBPair} from '../../generated/schema'
 import {BIG_DECIMAL_ONE, BIG_DECIMAL_ZERO, BIG_INT_ZERO, MULTICALL3_ADDRESS, POOLMANAGER_ADDRESS} from '../constants'
 import {formatTokenAmountByDecimals, getPriceYOfBin} from '../utils'
@@ -21,8 +21,6 @@ export function loadBin(lbPair: LBPair, binId: i32): Bin {
     bin.totalSupply = BIG_INT_ZERO
     bin.priceY = getPriceYOfBin(binId, lbPair.binStep, tokenX, tokenY) // each bin has a determined price
     bin.priceX = BIG_DECIMAL_ONE.div(bin.priceY)
-    bin.liquidityProviders = []
-    bin.liquidityProviderCount = BIG_INT_ZERO
   }
 
   return bin
@@ -79,6 +77,13 @@ export function trackBins(
     fromBinId = toBinId
     toBinId = tmp
   }
+  if (toBinId - fromBinId > 31) {
+    for (let i = fromBinId; i <= toBinId; i += 32) {
+      trackBins(lbPair, i, i + 31 < toBinId ? i + 31 : toBinId, tokenXDecimals, tokenYDecimals)
+    }
+    return
+  }
+  log.info('[trackBins] multicall3 lbPair {} from {} to {}', [lbPair.id.toString(), fromBinId.toString(), toBinId.toString()])
   const calls = new Array<ethereum.Tuple>(toBinId - fromBinId + 1)
   for (let i = 0; i < calls.length; i++) {
     calls[i] = changetype<ethereum.Tuple>([
@@ -94,6 +99,7 @@ export function trackBins(
   const multicallResult = multicall3.try_aggregate(calls)
 
   if (multicallResult.reverted) {
+    log.warning("[trackBins multicall3.try_aggregate] reverted", []);
     return
   }
 
