@@ -5,6 +5,9 @@ schema:
   file: ./schema.graphql
 features:
   - grafting
+graft:
+  base: Qmde3xgWr3tbYDqyVFs4hY5Yv1neMqZGQJEDMzu7ZCX7ZP
+  block: 50428090
 dataSources:
   - kind: ethereum/contract
     name: PoolManager
@@ -61,24 +64,3 @@ dataSources:
           handler: handleMint
         - event: Burn(indexed bytes32,indexed address,uint256[],bytes32,bytes32[])
           handler: handleBurn
-  - kind: ethereum/contract
-    name: PositionManager
-    network: bsc
-    source:
-      abi: PositionManager
-      address: "0x3D311D6283Dd8aB90bb0031835C8e606349e2850"
-      startBlock: 47571312
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.7
-      language: wasm/assemblyscript
-      file: ./src/positionManager.ts
-      entities:
-        - LiquidityPosition
-      abis:
-        - name: PositionManager
-          file: ./abis/PositionManager.json
-      eventHandlers:
-        - event: TransferBatch(indexed address,indexed address,indexed
-            address,uint256[],uint256[])
-          handler: handleTransferBatch
