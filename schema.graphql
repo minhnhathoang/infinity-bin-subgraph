@@ -1,10 +1,3 @@
-type Bundle @entity(immutable: false) {
-  id: ID!
-
-  # price of Native usd
-  nativePriceUSD: BigDecimal!
-}
-
 type PoolManager @entity(immutable: false) {
   # Contract address
   id: ID!
@@ -12,97 +5,17 @@ type PoolManager @entity(immutable: false) {
   # Pair count
   pairCount: BigInt!
 
-  # Volume USD
-  volumeUSD: BigDecimal!
-
-  # Volume Native
-  volumeNative: BigDecimal!
-
-  # Untracked volume
-  untrackedVolumeUSD: BigDecimal!
-
-  # tvl USD
-  totalValueLockedUSD: BigDecimal!
-
-  # tvl Native
-  totalValueLockedNative: BigDecimal!
-
   # Transaction count
   txCount: BigInt!
 
   # Token count
   tokenCount: BigInt!
 
-  # User count
-  userCount: BigInt!
-
-  # pairs not used in trade routing
-  ignoredLbPairs: [LBPair!]!
-
-  feesUSD: BigDecimal!
-  feesNative: BigDecimal!
-
   # Pairs
   lbPairs: [LBPair!]! @derivedFrom(field: "factory")
 
   # Tokens
   tokens: [Token!]! @derivedFrom(field: "factory")
-
-  # Hour data
-  hourData: [TraderJoeHourData!]! @derivedFrom(field: "factory")
-
-  # Day data
-  dayData: [TraderJoeDayData!]! @derivedFrom(field: "factory")
-}
-
-type TraderJoeHourData @entity(immutable: false) {
-  # timestamp / 3600
-  id: ID!
-
-  # date - hour start timestamp
-  date: Int!
-
-  # factory
-  factory: PoolManager!
-
-  # volume
-  volumeNative: BigDecimal!
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
-
-  # TVL
-  totalValueLockedNative: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
-  feesUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
-}
-
-type TraderJoeDayData @entity(immutable: false) {
-  # timestamp / 86400
-  id: ID!
-
-  # date
-  date: Int!
-
-  # factory
-  factory: PoolManager!
-
-  # volume
-  volumeNative: BigDecimal!
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
-
-  # TVL
-  totalValueLockedNative: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
-  feesUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
 }
 
 type Token @entity(immutable: false) {
@@ -120,135 +33,14 @@ type Token @entity(immutable: false) {
   # used for other stats like marketcap
   totalSupply: BigInt!
 
-  # token specific volume
-  volume: BigDecimal!
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
-
   # transactions across all pairs
   txCount: BigInt!
-
-  # TVL across all pairs
-  totalValueLocked: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
-  derivedNative: BigDecimal!
-
-  feesUSD: BigDecimal!
-
-  # Token hour data
-  hourData: [TokenHourData!]! @derivedFrom(field: "token")
-
-  # Token day data
-  dayData: [TokenDayData!]! @derivedFrom(field: "token")
 
   # Base pairs
   basePairs: [LBPair!]! @derivedFrom(field: "tokenX")
 
   # Quote pairs
   quotePairs: [LBPair!]! @derivedFrom(field: "tokenY")
-
-  # Base pairs hour data
-  basePairsHourData: [LBPairHourData!]! @derivedFrom(field: "tokenX")
-
-  # Quote pairs hour data
-  quotePairsHourData: [LBPairHourData!]! @derivedFrom(field: "tokenY")
-
-  # Base pairs day data
-  basePairsDayData: [LBPairDayData!]! @derivedFrom(field: "tokenX")
-
-  # Quote pairs day data
-  quotePairsDayData: [LBPairDayData!]! @derivedFrom(field: "tokenY")
-}
-
-type TokenHourData @entity(immutable: false) {
-  # timestamp / 3600
-  id: ID!
-
-  # date - hour start timestamp
-  date: Int!
-
-  # token
-  token: Token!
-
-  # volume
-  volume: BigDecimal!
-  volumeNative: BigDecimal!
-  volumeUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
-
-  # TVL
-  totalValueLocked: BigDecimal!
-  totalValueLockedNative: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
-  # price usd
-  priceUSD: BigDecimal!
-
-  feesUSD: BigDecimal!
-
-  # opening price USD
-  open: BigDecimal!
-  # high price USD
-  high: BigDecimal!
-  # low price USD
-  low: BigDecimal!
-  # close price USD
-  close: BigDecimal!
-}
-
-type TokenDayData @entity(immutable: false) {
-  # timestamp / 86400
-  id: ID!
-
-  # date - day start timestamp
-  date: Int!
-
-  # token
-  token: Token!
-
-  # volume
-  volume: BigDecimal!
-  volumeNative: BigDecimal!
-  volumeUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
-
-  # TVL
-  totalValueLocked: BigDecimal!
-  totalValueLockedNative: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
-  # price usd
-  priceUSD: BigDecimal!
-
-  feesUSD: BigDecimal!
-
-  # opening price USD
-  open: BigDecimal!
-  # high price USD
-  high: BigDecimal!
-  # low price USD
-  low: BigDecimal!
-  # close price USD
-  close: BigDecimal!
-}
-
-type SJoeDayData @entity(immutable: true) {
-  # Timestmap / 86400
-  id: ID!
-
-  # date - day start timestamp
-  date: Int!
-
-  amountX: BigDecimal!
-  amountY: BigDecimal!
-
-  collectedNative: BigDecimal!
-  collectedUSD: BigDecimal!
 }
 
 type LBPair @entity(immutable: false) {
@@ -281,41 +73,18 @@ type LBPair @entity(immutable: false) {
   reserveX: BigDecimal!
   reserveY: BigDecimal!
 
-  # tvl
-  totalValueLockedNative: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
-
   # Price in terms of the asset pair
   tokenXPrice: BigDecimal!
   tokenYPrice: BigDecimal!
 
-  # Price in terms of USDC
-  tokenXPriceUSD: BigDecimal!
-  tokenYPriceUSD: BigDecimal!
-
-  # lifetime volume stats
-  volumeTokenX: BigDecimal!
-  volumeTokenY: BigDecimal!
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
   txCount: BigInt!
-  feesTokenX: BigDecimal!
-  feesTokenY: BigDecimal!
-  feesUSD: BigDecimal! # swap fees
-  # Fields used to help derived relationship
-  # used to detect new exchanges
-  liquidityProviderCount: BigInt!
 
   bins: [Bin!]! @derivedFrom(field: "lbPair")
-  liquidityPositions: [LiquidityPosition!]! @derivedFrom(field: "lbPair")
-  dayData: [LBPairDayData!]! @derivedFrom(field: "lbPair")
-  hourData: [LBPairHourData!]! @derivedFrom(field: "lbPair")
 
   # Transactions
   mints: [Mint!]! @derivedFrom(field: "lbPair")
   burns: [Burn!]! @derivedFrom(field: "lbPair")
   swaps: [Swap!]! @derivedFrom(field: "lbPair")
-  transfers: [Transfer!]! @derivedFrom(field: "lbPair")
 
   # Created at
   timestamp: BigInt!
@@ -335,125 +104,6 @@ type Bin @entity(immutable: false) {
   reserveY: BigDecimal!
 
   binId: Int!
-
-  liquidityProviders: [String!]!
-  liquidityProviderCount: BigInt!
-}
-
-type User @entity(immutable: true) {
-  # Address
-  id: ID!
-
-  # Approval for All
-  lbTokenApprovals: [Bytes!]!
-
-  # Liquidity Positions
-  liquidityPositions: [LiquidityPosition!]! @derivedFrom(field: "user")
-}
-
-type LBPairDayData @entity(immutable: false) {
-  # timestamp / 86400
-  id: ID!
-
-  # date - day start timestamp
-  date: Int!
-
-  # pair
-  lbPair: LBPair!
-
-  tokenX: Token!
-  tokenY: Token!
-
-  # reserves
-  reserveX: BigDecimal!
-  reserveY: BigDecimal!
-
-  # tvl at end of day
-  totalValueLockedUSD: BigDecimal!
-
-  # volume
-  volumeTokenX: BigDecimal!
-  volumeTokenY: BigDecimal!
-
-  # volume usd
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
-
-  # swap fees
-  feesUSD: BigDecimal!
-}
-
-type LBPairHourData @entity(immutable: false) {
-  # timestamp / 3600
-  id: ID!
-
-  # date - hour start timestamp
-  date: Int!
-
-  # pair
-  lbPair: LBPair!
-
-  tokenX: Token!
-  tokenY: Token!
-
-  # reserves
-  reserveX: BigDecimal!
-  reserveY: BigDecimal!
-
-  # tvl at end of hour
-  totalValueLockedUSD: BigDecimal!
-
-  # volume
-  volumeTokenX: BigDecimal!
-  volumeTokenY: BigDecimal!
-
-  # volume usd
-  volumeUSD: BigDecimal!
-  untrackedVolumeUSD: BigDecimal!
-
-  # tx count
-  txCount: BigInt!
-
-  # swap fees
-  feesUSD: BigDecimal!
-}
-
-type LiquidityPosition @entity(immutable: false) {
-  # lbPair address + user address
-  id: ID!
-  user: User!
-  lbPair: LBPair!
-
-  # user's bins liquidities
-  userBinLiquidities: [UserBinLiquidity!]!
-    @derivedFrom(field: "liquidityPosition")
-  binsCount: BigInt!
-
-  # block info
-  block: Int!
-  timestamp: Int!
-}
-
-type UserBinLiquidity @entity(immutable: false) {
-  # lbPair address + user + binId
-  id: ID!
-
-  # lbPair address + user address
-  liquidityPosition: LiquidityPosition!
-
-  # lbPair address + binId
-  lbPairBinId: Bin!
-
-  lbPair: LBPair!
-  user: User!
-  binId: BigInt!
-  liquidity: BigInt!
-
-  block: Int!
-  timestamp: Int!
 }
 
 type Transaction @entity(immutable: true) {
@@ -467,7 +117,6 @@ type Transaction @entity(immutable: true) {
   mints: [Mint!]! @derivedFrom(field: "transaction")
   burns: [Burn!]! @derivedFrom(field: "transaction")
   swaps: [Swap!]! @derivedFrom(field: "transaction")
-  transfers: [Transfer!]! @derivedFrom(field: "transaction")
 }
 
 type Mint @entity(immutable: true) {
@@ -486,15 +135,9 @@ type Mint @entity(immutable: true) {
   minId: Int!
   maxId: Int!
   salt: Bytes!
-  compositionFeeAmountX: BigDecimal!
-  compositionFeeAmountY: BigDecimal!
-  feeAmountToProtocolX: BigDecimal!
-  feeAmountToProtocolY: BigDecimal!
 
   amountX: BigDecimal!
   amountY: BigDecimal!
-  # derived amount based on available prices of tokens
-  amountUSD: BigDecimal!
 
   logIndex: BigInt!
 }
@@ -518,8 +161,6 @@ type Burn @entity(immutable: true) {
 
   amountX: BigDecimal!
   amountY: BigDecimal!
-  # derived amount based on available prices of tokens
-  amountUSD: BigDecimal!
 
   logIndex: BigInt!
 }
@@ -542,36 +183,6 @@ type Swap @entity(immutable: true) {
   amountYIn: BigDecimal!
   amountXOut: BigDecimal!
   amountYOut: BigDecimal!
-  amountUSD: BigDecimal!
 
-  feesTokenX: BigDecimal!
-  feesTokenY: BigDecimal!
-  feesUSD: BigDecimal!
-
-  logIndex: BigInt!
-}
-
-# indexes both TransferSingle and TransferBatch events
-type Transfer @entity(immutable: true) {
-  # transaction hash + "#" + index in transfer Transaction array + "#" + (optional: TransferBatch index)
-  id: ID!
-  transaction: Transaction!
-  timestamp: Int!
-
-  isBatch: Boolean!
-  batchIndex: Int # optional only for TransferBatch event
-  isMint: Boolean!
-  isBurn: Boolean!
-
-  lbPair: LBPair!
-
-  binId: BigInt!
-  amount: BigInt!
-
-  sender: Bytes!
-  from: Bytes!
-  to: Bytes!
-
-  origin: Bytes!
   logIndex: BigInt!
 }
