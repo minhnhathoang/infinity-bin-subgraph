@@ -1,10 +1,10 @@
-import {Address, BigInt} from '@graphprotocol/graph-ts'
+import {Address, BigInt, log} from '@graphprotocol/graph-ts'
 import {ERC20 as ERC20ABI} from '../../generated/PoolManager/ERC20'
 import {ERC20NameBytes as ERC20NameBytesABI} from '../../generated/PoolManager/ERC20NameBytes'
 import {ERC20SymbolBytes as ERC20SymbolBytesABI} from '../../generated/PoolManager/ERC20SymbolBytes'
 import {Token} from '../../generated/schema'
 import {
-  ADDRESS_ZERO, BIG_DECIMAL_ZERO, BIG_INT_ONE, BIG_INT_ZERO, NATIVE_NAME, NATIVE_SYMBOL, NULL_CALL_RESULT_VALUE,
+  ADDRESS_ZERO, BIG_INT_ONE, BIG_INT_ZERO, NATIVE_NAME, NATIVE_SYMBOL, NULL_CALL_RESULT_VALUE,
 } from '../constants'
 import {loadPoolManager} from './poolManager'
 
@@ -22,16 +22,7 @@ export function loadToken(address: Address): Token {
     token.name = getName(address)
     token.decimals = getDecimals(address)
     token.totalSupply = getTotalSupply(address)
-
-    token.volume = BIG_DECIMAL_ZERO
-    token.volumeUSD = BIG_DECIMAL_ZERO
-    token.untrackedVolumeUSD = BIG_DECIMAL_ZERO
     token.txCount = BIG_INT_ZERO
-    token.totalValueLocked = BIG_DECIMAL_ZERO
-    token.totalValueLockedUSD = BIG_DECIMAL_ZERO
-    token.derivedNative = BIG_DECIMAL_ZERO
-    token.feesUSD = BIG_DECIMAL_ZERO
-
     token.save()
   }
 

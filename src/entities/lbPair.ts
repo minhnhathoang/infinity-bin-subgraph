@@ -1,4 +1,4 @@
-import {BigInt, Bytes, ethereum} from '@graphprotocol/graph-ts'
+import {BigInt, Bytes, ethereum, log} from '@graphprotocol/graph-ts'
 import {Initialize__Params} from '../../generated/PoolManager/PoolManager'
 import {LBPair} from '../../generated/schema'
 import {BIG_DECIMAL_1E4, BIG_DECIMAL_ZERO, BIG_INT_ZERO, POOLMANAGER_ADDRESS} from '../constants'
@@ -20,6 +20,7 @@ export function createLBPair(
   const tokenY = loadToken(initialize.currency1)
 
   const lbPair = new LBPair(initialize.id.toHexString())
+  log.info('createLBPair: {}', [lbPair.id.toString()])
 
   lbPair.factory = POOLMANAGER_ADDRESS.toHexString()
   lbPair.name = tokenX.symbol
@@ -36,21 +37,9 @@ export function createLBPair(
 
   lbPair.reserveX = BIG_DECIMAL_ZERO
   lbPair.reserveY = BIG_DECIMAL_ZERO
-  lbPair.totalValueLockedNative = BIG_DECIMAL_ZERO
-  lbPair.totalValueLockedUSD = BIG_DECIMAL_ZERO
   lbPair.tokenXPrice = BIG_DECIMAL_ZERO
   lbPair.tokenYPrice = BIG_DECIMAL_ZERO
-  lbPair.tokenXPriceUSD = BIG_DECIMAL_ZERO
-  lbPair.tokenYPriceUSD = BIG_DECIMAL_ZERO
-  lbPair.volumeTokenX = BIG_DECIMAL_ZERO
-  lbPair.volumeTokenY = BIG_DECIMAL_ZERO
-  lbPair.volumeUSD = BIG_DECIMAL_ZERO
-  lbPair.untrackedVolumeUSD = BIG_DECIMAL_ZERO
   lbPair.txCount = BIG_INT_ZERO
-  lbPair.feesTokenX = BIG_DECIMAL_ZERO
-  lbPair.feesTokenY = BIG_DECIMAL_ZERO
-  lbPair.feesUSD = BIG_DECIMAL_ZERO
-  lbPair.liquidityProviderCount = BIG_INT_ZERO
 
   lbPair.timestamp = block.timestamp
   lbPair.block = block.number

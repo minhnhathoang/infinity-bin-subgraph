@@ -6,8 +6,8 @@ schema:
 features:
   - grafting
 graft:
-  base: QmViP2yUh4yyzW1AK4JsxxtKWpGNWB8rPwjeTPEcU63pAq
-  block: 50837140
+  base: QmQU2zFrMUtHv8eSNwGWi2TNTNiXsH8AuuWnzVrwTXAuRw
+  block: 47846011
 dataSources:
   - kind: ethereum/contract
     name: PoolManager
@@ -23,19 +23,9 @@ dataSources:
       file: ./src/poolManager.ts
       entities:
         - PoolManager
-        - LBPair
         - Token
-        - Bundle
+        - LBPair
         - Bin
-        - HourData
-        - DayData
-        - LBPairHourData
-        - LBPairDayData
-        - TokenHourData
-        - TokenDayData
-        - User
-        - LiquidityPosition
-        - UserBinLiquidity
         - Transaction
         - Mint
         - Burn
@@ -43,8 +33,6 @@ dataSources:
       abis:
         - name: PoolManager
           file: ./abis/PoolManager.json
-        - name: DexLens
-          file: ./abis/DexLens.json
         - name: ERC20
           file: ./abis/ERC20.json
         - name: ERC20SymbolBytes

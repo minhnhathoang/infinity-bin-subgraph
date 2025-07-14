@@ -21,8 +21,6 @@ export function loadBin(lbPair: LBPair, binId: i32): Bin {
     bin.totalSupply = BIG_INT_ZERO
     bin.priceY = getPriceYOfBin(binId, lbPair.binStep, tokenX, tokenY) // each bin has a determined price
     bin.priceX = BIG_DECIMAL_ONE.div(bin.priceY)
-    bin.liquidityProviders = []
-    bin.liquidityProviderCount = BIG_INT_ZERO
   }
 
   return bin
@@ -101,6 +99,7 @@ export function trackBins(
   const multicallResult = multicall3.try_aggregate(calls)
 
   if (multicallResult.reverted) {
+    log.warning("[trackBins multicall3.try_aggregate] reverted", []);
     return
   }
 
