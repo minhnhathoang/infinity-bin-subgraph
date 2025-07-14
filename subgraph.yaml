@@ -6,8 +6,8 @@ schema:
 features:
   - grafting
 graft:
-  base: Qmde3xgWr3tbYDqyVFs4hY5Yv1neMqZGQJEDMzu7ZCX7ZP
-  block: 50428090
+  base: QmViP2yUh4yyzW1AK4JsxxtKWpGNWB8rPwjeTPEcU63pAq
+  block: 50837140
 dataSources:
   - kind: ethereum/contract
     name: PoolManager

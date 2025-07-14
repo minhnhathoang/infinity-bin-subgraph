@@ -1,4 +1,4 @@
-import {Address, BigDecimal, BigInt, Bytes, ethereum} from '@graphprotocol/graph-ts'
+import {Address, BigDecimal, BigInt, Bytes, ethereum, log} from '@graphprotocol/graph-ts'
 import {Bin, LBPair} from '../../generated/schema'
 import {BIG_DECIMAL_ONE, BIG_DECIMAL_ZERO, BIG_INT_ZERO, MULTICALL3_ADDRESS, POOLMANAGER_ADDRESS} from '../constants'
 import {formatTokenAmountByDecimals, getPriceYOfBin} from '../utils'
@@ -83,7 +83,9 @@ export function trackBins(
     for (let i = fromBinId; i <= toBinId; i += 32) {
       trackBins(lbPair, i, i + 31 < toBinId ? i + 31 : toBinId, tokenXDecimals, tokenYDecimals)
     }
+    return
   }
+  log.info('[trackBins] multicall3 lbPair {} from {} to {}', [lbPair.id.toString(), fromBinId.toString(), toBinId.toString()])
   const calls = new Array<ethereum.Tuple>(toBinId - fromBinId + 1)
   for (let i = 0; i < calls.length; i++) {
     calls[i] = changetype<ethereum.Tuple>([
